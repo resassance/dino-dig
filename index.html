@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dino Dig — Match-3</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <nav class="main-nav">
+        <button id="btnNavGame" class="nav-tab active">🎮 Раскопки</button>
+        <button id="btnNavMuseum" class="nav-tab">🏛️ Музей</button>
+    </nav>
+
+    <div id="gameScreen" class="screen-view">
+        <div id="ui">
+            <h1>🦴 DINO DIG</h1>
+            
+            <div class="museum-bar">
+                <span>🏛️ Скелет T-Rex: <b id="museumCount">0</b>/10</span>
+                <div class="progress-bg"><div id="museumProgress" class="progress-fill"></div></div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">Цель: <span id="goalText">0/0</span></div>
+                <div class="stat">Ходы: <span id="moves">20</span></div>
+                <div class="stat">Очки: <span id="score">0</span></div>
+                <div class="stat">Инструменты: <span id="tools">0</span></div>
+            </div>
+
+            <div class="boosters">
+                <button id="btnPickaxe" class="booster-btn" draggable="true" data-tool="pickaxe">⛏️ Кирка (1)</button>
+                <button id="btnDynamite" class="booster-btn" draggable="true" data-tool="dynamite">🧨 Динамит (2)</button>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <canvas id="gameCanvas" width="548" height="548"></canvas>
+            
+            <div id="modalOverlay" class="modal-overlay hidden">
+                <div class="modal-card">
+                    <h2 id="modalTitle">Уровень Пройден!</h2>
+                    <p id="modalDesc">Отличная работа, артефакты найдены!</p>
+                    <div class="modal-stats">
+                        <div>Счёт: <span id="modalScore">0</span></div>
+                    </div>
+                    <button id="btnModalNext" class="modal-btn">Продолжить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="museumScreen" class="screen-view hidden">
+        <div class="museum-header">
+            <h2>🏛️ Главная Экспозиция</h2>
+            <p id="dinoTitle">Тираннозавр Рекс (T-Rex)</p>
+        </div>
+
+        <div class="museum-stand">
+            <div class="skeleton-silhouette">
+                <div id="bonesGrid" class="bones-grid"></div>
+            </div>
+        </div>
+
+        <div id="boneInfoCard" class="bone-info-card hidden">
+            <h3 id="boneName">Название кости</h3>
+            <p id="boneDesc">Описание и факт о кости появятся здесь при клике на открытый фрагмент.</p>
+        </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
