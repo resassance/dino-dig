@@ -150,7 +150,7 @@ export class Grid {
             }
         }
 
-        if (matchedSet.size === 0) return { hasMatches: false, bonusesToSpawn: [] };
+        if (matchedSet.size === 0) return { hasMatches: false, bonusesToSpawn: [], matchedTypes: [] };
 
         const queue = Array.from(matchedSet);
         while (queue.length > 0) {
@@ -169,9 +169,20 @@ export class Grid {
             }
         }
 
+        // Собираем уникальные типы совпавших тайлов (динозавры)
+        const matchedTypes = [];
+        matchedSet.forEach(tile => {
+            if (!tile.isCrate && !tile.isFossil && tile.type !== undefined) {
+                if (!matchedTypes.includes(tile.type)) {
+                    matchedTypes.push(tile.type);
+                }
+            }
+        });
+
         return {
             hasMatches: true,
-            bonusesToSpawn: result.bonusesToSpawn
+            bonusesToSpawn: result.bonusesToSpawn,
+            matchedTypes
         };
     }
 

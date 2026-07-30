@@ -219,12 +219,14 @@ canvas {
 
 #museumScreen {
     width: 100%;
-    max-width: 550px;
+    max-width: 100%;
     gap: 16px;
+    padding: 0 20px;
 }
 
 .museum-header {
     text-align: center;
+    width: 100%;
 }
 
 .museum-header h2 {
@@ -245,6 +247,7 @@ canvas {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+    overflow: hidden;
 }
 
 .bones-grid {
@@ -311,64 +314,6 @@ canvas {
     color: #d4b28c;
     font-size: 13px;
     line-height: 1.4;
-}
-
-
-.dino-modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(11, 7, 4, 0.88);
-    backdrop-filter: blur(6px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.dino-modal-card {
-    background: #2b1c10;
-    color: #f0e6d2;
-    padding: 28px;
-    border-radius: 12px;
-    border: 3px solid #e0a96d;
-    text-align: center;
-    max-width: 400px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
-}
-
-.dino-modal-icon {
-    font-size: 48px;
-    margin-bottom: 8px;
-}
-
-.dino-modal-card h2 {
-    color: #ffd700;
-    font-size: 22px;
-    margin-bottom: 10px;
-}
-
-.dino-modal-card p {
-    font-size: 14px;
-    color: #d4b28c;
-    line-height: 1.4;
-    margin-bottom: 18px;
-}
-
-.btn-assemble-gold {
-    background: linear-gradient(135deg, #8c5e38, #d35400);
-    border: 2px solid #ffd700;
-    color: #fff;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-assemble-gold:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
 }
 
 .assembly-anim-overlay {
@@ -522,4 +467,225 @@ canvas {
 
 .hidden-exhibit {
     display: none !important;
+}
+
+/* ── Вкладки динозавров в музее ── */
+.museum-dino-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #1a110a;
+    border-radius: 10px;
+    border: 1px solid #3d2817;
+}
+
+.dino-tab-btn {
+    background: #2b1c10;
+    border: 2px solid #543922;
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: #d4b28c;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 70px;
+    transition: all 0.2s ease;
+}
+
+.dino-tab-btn:hover {
+    border-color: #e0a96d;
+    transform: translateY(-2px);
+}
+
+.dino-tab-btn.active {
+    background: #8c5e38;
+    border-color: #ffd700;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.dino-tab-btn.complete {
+    border-color: #2ecc71;
+}
+
+.dino-tab-btn.complete.active {
+    border-color: #ffd700;
+    background: #8c5e38;
+}
+
+.dino-tab-emoji {
+    font-size: 24px;
+}
+
+.dino-tab-name {
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.dino-tab-count {
+    font-size: 9px;
+    color: #ffd700;
+}
+
+/* ── Заголовок динозавра ── */
+.museum-dino-header {
+    background: #1e130a;
+    border: 2px solid #3d2817;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.dino-header-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.dino-header-emoji {
+    font-size: 40px;
+}
+
+.dino-header-main h3 {
+    color: #ffd700;
+    font-size: 18px;
+    margin: 0;
+}
+
+.dino-header-main small {
+    color: #d4b28c;
+    font-size: 11px;
+}
+
+.dino-complete-badge {
+    margin-left: auto;
+    background: #2ecc71;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.dino-header-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dino-prog-bar-wrap {
+    flex: 1;
+    height: 10px;
+    background: #140d07;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.dino-prog-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #e0a96d, #ffd700);
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+
+.dino-header-progress span {
+    font-size: 12px;
+    color: #ffd700;
+    white-space: nowrap;
+}
+
+/* ── Слоты костей ── */
+.bones-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.bone-icon {
+    font-size: 28px;
+    display: block;
+}
+
+.bone-slot .bone-num {
+    font-size: 10px;
+    color: #d4b28c;
+    display: block;
+    margin-top: 4px;
+}
+
+/* ── Модальное окно сборки ── */
+.dino-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(10, 6, 3, 0.92);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.dino-modal-card {
+    background: #2b1c10;
+    border: 3px solid #ffd700;
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    max-width: 340px;
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+    animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.dino-modal-icon {
+    font-size: 72px;
+    margin-bottom: 12px;
+}
+
+.dino-modal-card h2 {
+    color: #ffd700;
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.dino-modal-card p {
+    color: #d4b28c;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.btn-assemble-gold {
+    background: linear-gradient(135deg, #ffd700, #e0a96d);
+    color: #2b1c10;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 25px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.btn-assemble-gold:hover {
+    transform: scale(1.06);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
 }

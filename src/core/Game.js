@@ -124,17 +124,7 @@ export class Game {
         if (this.ui.btnModalMuseum) {
             this.ui.btnModalMuseum.addEventListener('click', () => {
                 this.ui.modalOverlay.classList.add('hidden');
-                
-                const museumTab = document.getElementById('btnMuseum') || 
-                                  document.getElementById('tabMuseum') || 
-                                  document.querySelector('[data-tab="museum"]') ||
-                                  document.querySelector('[data-target="museum"]');
-                
-                if (museumTab) {
-                    museumTab.click();
-                } else {
-                    window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));
-                }
+                window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));
             });
         }
     }
@@ -221,25 +211,30 @@ export class Game {
 
     updateUI() {
         if (this.museum) {
-            this.museumBones = this.museum.unlockedBones.length;
+            this.museumBones = this.museum.getTotalUnlocked();
         }
         if (this.ui.score) this.ui.score.textContent = this.score;
         if (this.ui.moves) this.ui.moves.textContent = this.moves;
         if (this.ui.tools) this.ui.tools.textContent = this.tools;
         if (this.ui.goalText) this.ui.goalText.textContent = `${this.goalProgress}/${this.goalTarget}`;
         if (this.ui.museumCount) this.ui.museumCount.textContent = this.museumBones;
+        const totalBones = this.museum ? this.museum.getTotalBones() : 60;
+        const museumTotalEl = document.getElementById('museumTotal');
+        if (museumTotalEl) museumTotalEl.textContent = totalBones;
         if (this.ui.museumProgress) {
-            const pct = Math.min(100, (this.museumBones / 10) * 100);
+            const pct = Math.min(100, (this.museumBones / totalBones) * 100);
             this.ui.museumProgress.style.width = `${pct}%`;
         }
     }
 
     processMatches() {
-        const { hasMatches, bonusesToSpawn } = this.grid.findAndMarkMatches();
-        if (hasMatches) {
-            this.pendingBonuses = bonusesToSpawn;
+        const result = this.grid.findAndMarkMatches();
+        if (result.hasMatches) {
+            this.pendingBonuses = result.bonusesToSpawn;
             this.combo++;
             this.score += 30 * this.combo;
+            // Кости добавляются ТОЛЬКО при раскопках (уровень 1) в removeMatches через digLayer.dig()
+            // ИЛИ при уровне 3 через collectBottomFossils() в состоянии FALLING
             this.updateUI();
             this.state = STATE.REMOVING;
         } else {
@@ -257,8 +252,17 @@ export class Game {
             let desc = 'Отличная работа! Уровень успешно пройден.';
 
             if (this.unlockedThisLevel.length > 0) {
-                const names = this.unlockedThisLevel.map(b => `${b.icon || '🦴'} ${b.name}`).join(', ');
-                desc += `<br><br><b>🦴 Собрано деталей (${this.unlockedThisLevel.length}):</b><br>${names}`;
+                const boneInfo = {};
+                this.unlockedThisLevel.forEach(b => {
+                    if (!boneInfo[b.dinoId]) boneInfo[b.dinoId] = [];
+                    boneInfo[b.dinoId].push(`${b.icon || '🦴'} ${b.name}`);
+                });
+                
+                let bonesHtml = '';
+                for (const dinoId in boneInfo) {
+                    bonesHtml += `<br>🦕 ${boneInfo[dinoId].join(', ')}`;
+                }
+                desc += `<br><br><b>🦴 Собрано деталей (${this.unlockedThisLevel.length}):</b>${bonesHtml}`;
             }
 
             this.ui.modalDesc.innerHTML = desc;
@@ -276,9 +280,10 @@ export class Game {
             }
         }
 
-        if (this.museumBones >= 10) {
-            this.ui.modalTitle.textContent = '🦖 МУЗЕЙНЫЙ ЭКСПОНАТ СОБРАН!';
-            this.ui.modalDesc.innerHTML += '<br><br>Поздравляем! Весь скелет T-Rex собран!';
+        // Проверяем, собраны ли все динозавры
+        if (this.museum && this.museum.getTotalUnlocked() >= this.museum.getTotalBones()) {
+            this.ui.modalTitle.textContent = '🏆 ВСЕ ДИНОЗАВРЫ СОБРАНЫ!';
+            this.ui.modalDesc.innerHTML += '<br><br>Поздравляем! Ты собрал все 60 костей 6 динозавров!';
         }
 
         this.ui.modalScore.textContent = this.score;
@@ -305,7 +310,8 @@ export class Game {
 
                     if (unburiedFossilsCount > 0) {
                         if (this.museum) {
-                            const newBones = this.museum.addBones(unburiedFossilsCount);
+                            // Добавляем кости T-Rex (динозавр 0) при раскопках
+                            const newBones = this.museum.addBones(unburiedFossilsCount, 0);
                             this.unlockedThisLevel.push(...newBones);
                         }
                         this.score += unburiedFossilsCount * 200;
@@ -324,7 +330,7 @@ export class Game {
                         const collected = this.grid.collectBottomFossils();
                         if (collected > 0) {
                             if (this.museum) {
-                                const newBones = this.museum.addBones(collected);
+                                const newBones = this.museum.addBones(collected, 0);
                                 this.unlockedThisLevel.push(...newBones);
                             }
                             this.goalProgress += collected;
@@ -334,8 +340,8 @@ export class Game {
                         }
                     }
 
-                    const { hasMatches } = this.grid.findAndMarkMatches();
-                    if (hasMatches) {
+                    const result = this.grid.findAndMarkMatches();
+                    if (result.hasMatches) {
                         this.state = STATE.CHECKING;
                     } else {
                         if (this.goalProgress >= this.goalTarget) {
