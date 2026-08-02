@@ -1,10 +1,11 @@
 import { CONFIG } from '../config.js';
 
 export class InputManager {
-    constructor(canvas, onSwapAttempt, onUseTool) {
+    constructor(canvas, onSwapAttempt, onUseTool, onActivateBonus) {
         this.canvas = canvas;
         this.onSwap = onSwapAttempt;
         this.onUseTool = onUseTool;
+        this.onActivateBonus = onActivateBonus;
         this.selected = null;
         this.activeTool = null;
         this._bind();
@@ -40,6 +41,8 @@ export class InputManager {
         let start = null;
         let startCell = null;
         let isDragging = false;
+        let lastTapCell = null;
+        let lastTapTime = 0;
 
         const onStart = (e) => {
             const pos = this._getPos(e);
@@ -53,13 +56,27 @@ export class InputManager {
         const onEnd = (e) => {
             if (!isDragging || !startCell) return;
             isDragging = false;
-            
+
             const pos = this._getPos(e);
             const dx = pos.x - start.x;
             const dy = pos.y - start.y;
             const dist = Math.hypot(dx, dy);
 
             if (dist < 10) {
+                const now = Date.now();
+                const isDoubleTap = lastTapCell &&
+                    lastTapCell.c === startCell.c && lastTapCell.r === startCell.r &&
+                    (now - lastTapTime) < 300;
+                lastTapCell = startCell;
+                lastTapTime = now;
+
+                if (isDoubleTap) {
+                    lastTapCell = null;
+                    if (this.onActivateBonus) this.onActivateBonus(startCell.c, startCell.r);
+                    this.selected = null;
+                    return;
+                }
+
                 if (this.activeTool && this.onUseTool) {
                     this.onUseTool(this.activeTool, startCell.c, startCell.r);
                     this.selected = null;
@@ -79,6 +96,7 @@ export class InputManager {
                 return;
             }
 
+            lastTapCell = null;
             let tc = startCell.c, tr = startCell.r;
             if (Math.abs(dx) > Math.abs(dy)) {
                 tc += dx > 0 ? 1 : -1;
@@ -93,7 +111,9 @@ export class InputManager {
         };
 
         this.canvas.addEventListener('mousedown', onStart);
-        this.canvas.addEventListener('mouseup', onEnd);
+        // mouseup слушаем на window, а не на canvas: иначе быстрый свайп,
+        // который заканчивается за пределами канваса, вообще не засчитывался.
+        window.addEventListener('mouseup', onEnd);
         this.canvas.addEventListener('touchstart', onStart, { passive: false });
         this.canvas.addEventListener('touchend', onEnd, { passive: false });
         this.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });

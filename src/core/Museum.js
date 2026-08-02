@@ -1,4 +1,5 @@
-import { DINO_DATA } from '../config.js';
+import { DINO_DATA, ASSETS } from '../config.js';
+import { createImgOrEmoji } from '../utils/AssetLoader.js';
 
 export class Museum {
     constructor() {
@@ -11,6 +12,8 @@ export class Museum {
 
         // unlockedBones: Set строковых id вида '0-1', '1-3', ...
         this.unlockedBones = this.loadState();
+        // dinoId'ы, для которых игрок сам нажал "Собрать скелет" (после этого показываем экспонат)
+        this.assembledDinos = this.loadAssembledState();
         // какой динозавр сейчас открыт в музее
         this.activeDinoId = 0;
         // режим отображения для каждого собранного динозавра
@@ -28,6 +31,15 @@ export class Museum {
 
     saveState() {
         localStorage.setItem('dino_museum_bones_v2', JSON.stringify([...this.unlockedBones]));
+    }
+
+    loadAssembledState() {
+        const saved = localStorage.getItem('dino_museum_assembled_v1');
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+
+    saveAssembledState() {
+        localStorage.setItem('dino_museum_assembled_v1', JSON.stringify([...this.assembledDinos]));
     }
 
     // ─── Добавление костей ────────────────────────────────────────────
@@ -91,6 +103,10 @@ export class Museum {
         return dino ? dino.bones.every(b => this.unlockedBones.has(b.id)) : false;
     }
 
+    isDinoAssembled(dinoId) {
+        return this.assembledDinos.has(dinoId);
+    }
+
     // ─── Инициализация ────────────────────────────────────────────────
 
     init() {
@@ -122,7 +138,7 @@ export class Museum {
 
         Object.values(DINO_DATA).forEach(dino => {
             const { unlocked, total } = this.getDinoProgress(dino.id);
-            const complete = unlocked >= total;
+            const complete = this.isDinoAssembled(dino.id);
             const btn = document.createElement('button');
             btn.className = `dino-tab-btn ${dino.id === this.activeDinoId ? 'active' : ''} ${complete ? 'complete' : ''}`;
             btn.title = dino.name;
@@ -147,6 +163,7 @@ export class Museum {
 
         const { unlocked, total } = this.getDinoProgress(dino.id);
         const isComplete = unlocked >= total;
+        const isAssembled = this.isDinoAssembled(dino.id);
 
         // Заголовок динозавра
         const header = document.createElement('div');
@@ -158,7 +175,7 @@ export class Museum {
                     <h3>${dino.name}</h3>
                     <small>${dino.latinName} · ${dino.period}</small>
                 </div>
-                ${isComplete ? '<span class="dino-complete-badge">✅ Собран</span>' : ''}
+                ${isAssembled ? '<span class="dino-complete-badge">✅ Собран</span>' : ''}
             </div>
             <div class="dino-header-progress">
                 <div class="dino-prog-bar-wrap">
@@ -169,12 +186,12 @@ export class Museum {
         `;
         this.gridEl.appendChild(header);
 
-        if (isComplete) {
+        if (isComplete && isAssembled) {
             this._renderAssembledDino(dino);
             return;
         }
 
-        // Сетка костей
+        // Сетка костей (показывается и когда все кости найдены, но скелет ещё не собран игроком)
         const bonesGrid = document.createElement('div');
         bonesGrid.className = 'bones-slots-grid';
 
@@ -182,17 +199,41 @@ export class Museum {
             const isUnlocked = this.unlockedBones.has(bone.id);
             const slot = document.createElement('div');
             slot.className = `bone-slot ${isUnlocked ? 'unlocked' : 'locked'}`;
-            slot.innerHTML = `
-                <span class="bone-icon">${isUnlocked ? bone.icon : '❓'}</span>
-                <span class="bone-num">#${bone.id.split('-')[1]}</span>
-            `;
+
+            const numSpan = document.createElement('span');
+            numSpan.className = 'bone-num';
+            numSpan.textContent = `#${bone.id.split('-')[1]}`;
+
             if (isUnlocked) {
+                const icon = createImgOrEmoji(ASSETS.boneIcon(bone.id), bone.icon, 'bone-icon');
+                slot.appendChild(icon);
                 slot.addEventListener('click', () => this._showBoneInfo(bone));
+            } else {
+                const icon = document.createElement('span');
+                icon.className = 'bone-icon';
+                icon.textContent = '❓';
+                slot.appendChild(icon);
             }
+            slot.appendChild(numSpan);
             bonesGrid.appendChild(slot);
         });
 
         this.gridEl.appendChild(bonesGrid);
+
+        if (isComplete && !isAssembled) {
+            const assembleBar = document.createElement('div');
+            assembleBar.className = 'assemble-cta';
+            assembleBar.innerHTML = `
+                <p>Все фрагменты найдены! Собери скелет, чтобы увидеть экспонат.</p>
+                <button class="btn-assemble-gold" id="btnAssembleNow">✨ Собрать скелет</button>
+            `;
+            assembleBar.querySelector('#btnAssembleNow').addEventListener('click', () => {
+                this.assembledDinos.add(dino.id);
+                this.saveAssembledState();
+                this.render();
+            });
+            this.gridEl.appendChild(assembleBar);
+        }
 
         // Инфо-карточка (скрытая по умолчанию)
         if (this.infoCard) this.infoCard.classList.add('hidden');
@@ -220,7 +261,7 @@ export class Museum {
                 <div class="dino-modal-icon">${dino.emoji}✨</div>
                 <h2>Все кости собраны!</h2>
                 <p>Поздравляем! Ты нашёл все ${dino.bones.length} фрагментов скелета<br><b>${dino.name}</b>!</p>
-                <button id="btnStartAssemble" class="btn-assemble-gold">✨ Посмотреть экспонат</button>
+                <button id="btnStartAssemble" class="btn-assemble-gold">🏛️ Перейти в музей</button>
             </div>
         `;
         document.body.appendChild(modal);
@@ -229,6 +270,7 @@ export class Museum {
             modal.remove();
             this.activeDinoId = dinoId;
             this.render();
+            window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));
         });
     }
 
@@ -245,7 +287,7 @@ export class Museum {
 
             <div class="dino-display-card">
                 <div class="dino-visual-box">
-                    <div class="dino-avatar">${mode === 'skeleton' ? '🦴' + dino.emoji : dino.emoji + '🌿'}</div>
+                    <div class="dino-avatar" id="dinoAvatarSlot"></div>
                     <div class="dino-badge">${mode === 'skeleton' ? 'Реконструированный скелет' : 'Живой организм'}</div>
                 </div>
                 <div class="dino-details-box">
@@ -259,6 +301,11 @@ export class Museum {
                 </div>
             </div>
         `;
+
+        const avatarSlot = exhibit.querySelector('#dinoAvatarSlot');
+        const avatarPath = mode === 'skeleton' ? ASSETS.dinoSkeleton(dino.id) : ASSETS.dinoAlive(dino.id);
+        const avatarFallback = mode === 'skeleton' ? ('🦴' + dino.emoji) : (dino.emoji + '🌿');
+        avatarSlot.appendChild(createImgOrEmoji(avatarPath, avatarFallback, 'dino-avatar-media'));
 
         exhibit.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {

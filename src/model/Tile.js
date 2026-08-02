@@ -27,6 +27,10 @@ export class Tile {
         this.alpha = 1;
         this.isMatched = false;
         this.isNew = true;
+        this.shakeUntil = 0;
+        this.shakeOffsetX = 0;
+        this.shakeOffsetY = 0;
+        this.shakeAxis = 'x';
     }
 
     get color() { 
@@ -54,6 +58,21 @@ export class Tile {
         }
         if (this.isNew && Math.abs(this.y - this.targetY) < 0.5) {
             this.isNew = false;
+        }
+
+        if (this.shakeUntil > performance.now()) {
+            const remaining = this.shakeUntil - performance.now();
+            const wobble = Math.sin(remaining * 0.09) * 5 * (remaining / 260);
+            if (this.shakeAxis === 'y') {
+                this.shakeOffsetX = 0;
+                this.shakeOffsetY = wobble;
+            } else {
+                this.shakeOffsetX = wobble;
+                this.shakeOffsetY = 0;
+            }
+        } else {
+            this.shakeOffsetX = 0;
+            this.shakeOffsetY = 0;
         }
     }
 }

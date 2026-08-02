@@ -31,6 +31,26 @@ export const CANVAS_HEIGHT = CONFIG.CANVAS_HEIGHT;
 
 export const COLOR_KEYS = Object.keys(CONFIG.COLORS);
 
+// ── Кастомные ассеты (необязательно) ─────────────────────────────────
+// Просто положи файл по указанному пути — он подхватится сам.
+// Если файла нет, автоматически рисуется эмодзи-заглушка.
+export const ASSETS = {
+    // Спрайты баффов (тайлы-усиления, которые появляются после комбо)
+    bonusSprites: {
+        LINE_H: 'assets/bonus/line_h.png',
+        LINE_V: 'assets/bonus/line_v.png',
+        BOMB: 'assets/bonus/bomb.png',
+        COLOR_BOMB: 'assets/bonus/color_bomb.png'
+    },
+    // Универсальный спрайт "кости" на игровом поле (раскопки/падение костей)
+    fossilTileSprite: 'assets/bones/fossil.png',
+    // Иконка конкретного фрагмента кости в музее, по id кости (например '0-1')
+    boneIcon: (boneId) => `assets/bones/${boneId}.png`,
+    // Картинки динозавра в музее: собранный скелет / живой динозавр
+    dinoSkeleton: (dinoId) => `assets/dinos/${dinoId}-skeleton.png`,
+    dinoAlive: (dinoId) => `assets/dinos/${dinoId}-alive.png`
+};
+
 export const DINO_DATA = {
     // ID динозавра соответствует типу тайла в игре (0-5)
     0: {

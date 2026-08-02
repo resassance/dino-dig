@@ -14,7 +14,7 @@ export class Grid {
 
     applyPickaxe(c, r) {
         const t = this.get(c, r);
-        if (!t || t.isFossil) return false;
+        if (!t || t.isFossil || t.isCrate) return false;
         t.isMatched = true;
         return true;
     }
@@ -24,7 +24,7 @@ export class Grid {
         for (let dr = -1; dr <= 1; dr++) {
             for (let dc = -1; dc <= 1; dc++) {
                 const t = this.get(c + dc, r + dr);
-                if (t && !t.isFossil) {
+                if (t && !t.isFossil && !t.isCrate) {
                     t.isMatched = true;
                     applied = true;
                 }
@@ -134,6 +134,29 @@ export class Grid {
             this.lastMovedPos = null;
             return false;
         }
+        return true;
+    }
+
+    shakeTiles(c1, r1, c2, r2) {
+        const now = performance.now();
+        const axis = (r1 === r2) ? 'x' : 'y';
+        [[c1, r1], [c2, r2]].forEach(([c, r]) => {
+            const t = this.get(c, r);
+            if (t) {
+                t.shakeUntil = now + 260;
+                t.shakeAxis = axis;
+            }
+        });
+    }
+
+    activateBonusAt(c, r) {
+        const t = this.get(c, r);
+        if (!t || t.isCrate || t.isFossil) return false;
+        if (!t.bonus || t.bonus === BONUS_TYPE.NONE) return false;
+
+        t.isMatched = true;
+        const affected = this._getBonusAffectedTiles(t);
+        affected.forEach(bt => { bt.isMatched = true; });
         return true;
     }
 

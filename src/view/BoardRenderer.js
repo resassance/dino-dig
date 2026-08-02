@@ -1,5 +1,6 @@
-import { CONFIG } from '../config.js';
+import { CONFIG, ASSETS } from '../config.js';
 import { BONUS_TYPE } from '../model/Tile.js';
+import { getReadyImage } from '../utils/AssetLoader.js';
 
 export class BoardRenderer {
     constructor(ctx) {
@@ -77,12 +78,21 @@ export class BoardRenderer {
                     ctx.fill();
                 }
 
-                if (digLayer && digLayer.hasBuriedFossil(c, r)) {
-                    ctx.fillStyle = '#f5e6d3';
-                    ctx.font = '22px serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('🦴', x + ts / 2, y + ts / 2);
+                if (digLayer && digLayer.hasBuriedFossil(c, r) && layer <= 1) {
+                    ctx.save();
+                    ctx.globalAlpha = layer === 1 ? 0.35 : 0.9;
+                    const sprite = getReadyImage(ASSETS.fossilTileSprite);
+                    if (sprite) {
+                        const pad3 = ts * 0.22;
+                        ctx.drawImage(sprite, x + pad3, y + pad3, ts - pad3 * 2, ts - pad3 * 2);
+                    } else {
+                        ctx.fillStyle = '#f5e6d3';
+                        ctx.font = '22px serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('🦴', x + ts / 2, y + ts / 2);
+                    }
+                    ctx.restore();
                 }
             }
         }
@@ -111,6 +121,7 @@ export class BoardRenderer {
 
         ctx.save();
         ctx.globalAlpha = tile.alpha;
+        ctx.translate(tile.shakeOffsetX || 0, tile.shakeOffsetY || 0);
 
         const cx = tile.x + ts / 2;
         const cy = tile.y + ts / 2;
@@ -128,11 +139,17 @@ export class BoardRenderer {
             this._roundRect(tx, ty, drawSize, drawSize, 10);
             ctx.stroke();
 
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '22px serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🦴', cx, cy);
+            const sprite = getReadyImage(ASSETS.fossilTileSprite);
+            if (sprite) {
+                const pad2 = drawSize * 0.18;
+                ctx.drawImage(sprite, tx + pad2, ty + pad2, drawSize - pad2 * 2, drawSize - pad2 * 2);
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '22px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🦴', cx, cy);
+            }
 
         } else if (tile.isCrate) {
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
@@ -184,19 +201,25 @@ export class BoardRenderer {
             ctx.stroke();
 
             if (tile.bonus && tile.bonus !== BONUS_TYPE.NONE) {
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 16px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+                const sprite = getReadyImage(ASSETS.bonusSprites[tile.bonus]);
+                if (sprite) {
+                    const bp = drawSize * 0.2;
+                    ctx.drawImage(sprite, tx + bp, ty + bp, drawSize - bp * 2, drawSize - bp * 2);
+                } else {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
 
-                if (tile.bonus === BONUS_TYPE.LINE_H) {
-                    ctx.fillText('↔', cx, cy);
-                } else if (tile.bonus === BONUS_TYPE.LINE_V) {
-                    ctx.fillText('↕', cx, cy);
-                } else if (tile.bonus === BONUS_TYPE.BOMB) {
-                    ctx.fillText('🧨', cx, cy);
-                } else if (tile.bonus === BONUS_TYPE.COLOR_BOMB) {
-                    ctx.fillText('⛏️', cx, cy);
+                    if (tile.bonus === BONUS_TYPE.LINE_H) {
+                        ctx.fillText('↔', cx, cy);
+                    } else if (tile.bonus === BONUS_TYPE.LINE_V) {
+                        ctx.fillText('↕', cx, cy);
+                    } else if (tile.bonus === BONUS_TYPE.BOMB) {
+                        ctx.fillText('🧨', cx, cy);
+                    } else if (tile.bonus === BONUS_TYPE.COLOR_BOMB) {
+                        ctx.fillText('⛏️', cx, cy);
+                    }
                 }
             }
         }
