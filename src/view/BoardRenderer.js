@@ -186,19 +186,33 @@ export class BoardRenderer {
             this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
             ctx.fill();
 
-            ctx.fillStyle = c.main;
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
-            ctx.fill();
+            const sprite = getReadyImage(ASSETS.tileSprite(tile.colorKey));
+            if (sprite) {
+                ctx.save();
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.clip();
+                ctx.drawImage(sprite, tx, ty, drawSize, drawSize);
+                ctx.restore();
 
-            ctx.fillStyle = c.light;
-            ctx.beginPath();
-            ctx.ellipse(tx + drawSize/2, ty + drawSize/3, drawSize/3, drawSize/5, 0, 0, Math.PI * 2);
-            ctx.fill();
+                ctx.strokeStyle = c.dark;
+                ctx.lineWidth = 2;
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = c.main;
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.fill();
 
-            ctx.strokeStyle = c.dark;
-            ctx.lineWidth = 2;
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
-            ctx.stroke();
+                ctx.fillStyle = c.light;
+                ctx.beginPath();
+                ctx.ellipse(tx + drawSize/2, ty + drawSize/3, drawSize/3, drawSize/5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = c.dark;
+                ctx.lineWidth = 2;
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.stroke();
+            }
 
             if (tile.bonus && tile.bonus !== BONUS_TYPE.NONE) {
                 const sprite = getReadyImage(ASSETS.bonusSprites[tile.bonus]);

@@ -110,12 +110,25 @@ export class InputManager {
             }
         };
 
-        this.canvas.addEventListener('mousedown', onStart);
+        this.canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            onStart(e);
+        });
         // mouseup слушаем на window, а не на canvas: иначе быстрый свайп,
         // который заканчивается за пределами канваса, вообще не засчитывался.
         window.addEventListener('mouseup', onEnd);
-        this.canvas.addEventListener('touchstart', onStart, { passive: false });
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            onStart(e);
+        }, { passive: false });
         this.canvas.addEventListener('touchend', onEnd, { passive: false });
         this.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+        // Полностью блокируем нативное выделение текста, контекстное меню и drag
+        // на канвасе — на десктопе перетаскивание тайла иначе вызывало выделение
+        // поля или контекстное меню браузера.
+        this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+        this.canvas.addEventListener('selectstart', e => e.preventDefault());
+        this.canvas.addEventListener('dragstart', e => e.preventDefault());
     }
 }

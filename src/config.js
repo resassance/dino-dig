@@ -44,6 +44,8 @@ export const ASSETS = {
     },
     // Универсальный спрайт "кости" на игровом поле (раскопки/падение костей)
     fossilTileSprite: 'assets/bones/fossil.png',
+    // Спрайт камушка по его цветовому ключу (см. CONFIG.COLORS, ключи '0'..'5')
+    tileSprite: (colorKey) => `assets/tiles/${colorKey}.png`,
     // Иконка конкретного фрагмента кости в музее, по id кости (например '0-1')
     boneIcon: (boneId) => `assets/bones/${boneId}.png`,
     // Картинки динозавра в музее: собранный скелет / живой динозавр
@@ -192,6 +194,169 @@ export const DINO_DATA = {
         ]
     }
 };
+
+// ── Локализация текстов динозавров ───────────────────────────────────
+// DINO_DATA хранит "текущий язык" и мутируется на месте через setDinoLanguage(),
+// поэтому все модули, однажды импортировавшие DINO_DATA, всегда видят актуальный текст.
+function snapshotDinoText(source) {
+    const snap = {};
+    Object.keys(source).forEach(id => {
+        const d = source[id];
+        snap[id] = {
+            name: d.name,
+            description: d.description,
+            period: d.period,
+            length: d.length,
+            weight: d.weight,
+            bones: d.bones.map(b => ({ id: b.id, name: b.name, fact: b.fact }))
+        };
+    });
+    return snap;
+}
+
+const DINO_TEXT_RU = snapshotDinoText(DINO_DATA);
+
+const DINO_TEXT_EN = {
+    0: {
+        name: 'Tyrannosaurus Rex',
+        description: 'One of the largest land predators in Earth\u2019s history.',
+        period: 'Late Cretaceous (68\u201366 million years ago)',
+        length: '12 m',
+        weight: '8 tons',
+        bones: [
+            { id: '0-1', name: 'Skull', fact: 'T-Rex\u2019s bite force reached 6 tons \u2014 strong enough to crush a car!' },
+            { id: '0-2', name: 'Neck vertebra', fact: 'Its neck was short and muscular, built to support its heavy head.' },
+            { id: '0-3', name: 'Rib cage', fact: 'The ribs protected vital organs and supported its huge body mass.' },
+            { id: '0-4', name: 'Spine', fact: 'The spine was made of sturdy vertebrae with air pockets to save weight.' },
+            { id: '0-5', name: 'Pelvis', fact: 'The wide pelvis anchored the powerful muscles of its hind legs.' },
+            { id: '0-6', name: 'Left forearm', fact: 'Its arms were only about 1 meter long, yet could lift up to 200 kg!' },
+            { id: '0-7', name: 'Right forearm', fact: 'The two-fingered hands were used to grip prey or push off the ground.' },
+            { id: '0-8', name: 'Left leg', fact: 'Its huge thigh bone let it reach speeds of 20\u201325 km/h.' },
+            { id: '0-9', name: 'Right leg', fact: 'A three-toed foot spread its many-ton weight evenly on the ground.' },
+            { id: '0-10', name: 'Tail', fact: 'The long, heavy tail balanced out its massive head while walking.' }
+        ]
+    },
+    1: {
+        name: 'Stegosaurus',
+        description: 'Famous for the bony plates and spikes along its back and tail.',
+        period: 'Late Jurassic (155\u2013150 million years ago)',
+        length: '9 m',
+        weight: '3 tons',
+        bones: [
+            { id: '1-1', name: 'Skull', fact: 'Its brain was about the size of a walnut \u2014 one of the smallest of any dinosaur!' },
+            { id: '1-2', name: 'Neck vertebrae', fact: 'The neck was short, made up of 10 vertebrae.' },
+            { id: '1-3', name: 'Back vertebrae', fact: 'The spine had special ridges that anchored the back plates.' },
+            { id: '1-4', name: 'Bony plate', fact: 'The back plates may have changed color to attract mates or scare off enemies!' },
+            { id: '1-5', name: 'Tail vertebrae', fact: 'Four sharp spikes were mounted on the tail \u2014 a fearsome weapon against predators.' },
+            { id: '1-6', name: 'Tail spikes', fact: 'Each spike could grow 60\u201390 cm long!' },
+            { id: '1-7', name: 'Pelvis', fact: 'A massive pelvis helped carry the weight of its heavy plates.' },
+            { id: '1-8', name: 'Left hind leg', fact: 'Its legs were short but powerful enough to support its huge body.' },
+            { id: '1-9', name: 'Right hind leg', fact: 'Its thigh bone was up to 30 cm thick!' },
+            { id: '1-10', name: 'Armored back', fact: 'The plates were laced with blood vessels for temperature control!' }
+        ]
+    },
+    2: {
+        name: 'Brachiosaurus',
+        description: 'One of the tallest and heaviest dinosaurs, feeding on leaves high in the trees.',
+        period: 'Late Jurassic (154\u2013153 million years ago)',
+        length: '22 m',
+        weight: '56 tons',
+        bones: [
+            { id: '2-1', name: 'Skull', fact: 'Its nostrils sat on top of its head, much like modern whales!' },
+            { id: '2-2', name: 'Neck', fact: 'Its neck was 9 meters long \u2014 like a three-story building! It had 15\u201317 vertebrae.' },
+            { id: '2-3', name: 'Spine', fact: 'The vertebrae were hollow with air sacs, just like in birds, to cut down on weight.' },
+            { id: '2-4', name: 'Lungs', fact: 'Its lungs were about the size of a small car!' },
+            { id: '2-5', name: 'Forelimbs', fact: 'Its front legs were longer than its hind legs, tilting its back forward.' },
+            { id: '2-6', name: 'Hind limbs', fact: 'Its 2-meter-long thigh bone is the longest bone ever found!' },
+            { id: '2-7', name: 'Pelvis', fact: 'The pelvic girdle was incredibly strong to bear its enormous weight.' },
+            { id: '2-8', name: 'Ribs', fact: 'Its ribs formed a cage 3 meters long, protecting its organs.' },
+            { id: '2-9', name: 'Tail', fact: 'The tail was relatively short and balanced out its very long neck.' },
+            { id: '2-10', name: 'Shoulder girdle', fact: 'Powerful shoulder bones anchored its massive front legs to its body.' }
+        ]
+    },
+    3: {
+        name: 'Velociraptor',
+        description: 'A fast, intelligent predator made famous by the movie "Jurassic Park".',
+        period: 'Late Cretaceous (75\u201371 million years ago)',
+        length: '2 m',
+        weight: '15 kg',
+        bones: [
+            { id: '3-1', name: 'Skull', fact: 'Its skull was about 25 cm long and held 80 sharp teeth!' },
+            { id: '3-2', name: 'Eye sockets', fact: 'Its eyes faced forward, giving it binocular vision for hunting.' },
+            { id: '3-3', name: 'Neck vertebrae', fact: 'The neck was flexible and S-shaped, just like in birds.' },
+            { id: '3-4', name: 'Forearms', fact: 'Three sharp claws on each hand made excellent grasping tools!' },
+            { id: '3-5', name: 'Rib cage', fact: 'Like a bird, it had a keel bone anchoring powerful flight-related muscles.' },
+            { id: '3-6', name: 'Spine', fact: 'A flexible spine allowed for quick turns while hunting.' },
+            { id: '3-7', name: 'Pelvis', fact: 'Its pelvis was lightweight, like a bird\u2019s \u2014 great for covering long distances.' },
+            { id: '3-8', name: 'Hind legs', fact: 'Long legs let it reach speeds of up to 60 km/h!' },
+            { id: '3-9', name: 'Sickle claw', fact: 'Its famous 6.5 cm curved claw on the hind foot was used to deliver deadly strikes!' },
+            { id: '3-10', name: 'Tail', fact: 'A long tail acted as a counterbalance during sharp turns and running.' }
+        ]
+    },
+    4: {
+        name: 'Triceratops',
+        description: 'A plant-eating dinosaur with three horns and a large bony frill.',
+        period: 'Late Cretaceous (68\u201366 million years ago)',
+        length: '9 m',
+        weight: '6 tons',
+        bones: [
+            { id: '4-1', name: 'Frilled skull', fact: 'Its skull reached 2 meters long \u2014 almost a third of its whole body length!' },
+            { id: '4-2', name: 'Nose horn', fact: 'A nose horn about 30 cm long protected its snout from predators.' },
+            { id: '4-3', name: 'Brow horns', fact: 'Two horns above the eyes grew up to 1 meter \u2014 a fearsome weapon!' },
+            { id: '4-4', name: 'Bony frill', fact: 'The frill protected the neck and may have flashed bright colors to attract mates!' },
+            { id: '4-5', name: 'Neck vertebrae', fact: 'Its neck was short and muscular to support the weight of its huge frill.' },
+            { id: '4-6', name: 'Spine', fact: 'A sturdy spine supported the heavy, frilled head.' },
+            { id: '4-7', name: 'Front legs', fact: 'Its front legs were shorter than its hind legs, much like a rhino.' },
+            { id: '4-8', name: 'Hind legs', fact: 'Powerful hind legs let it run quickly away from predators!' },
+            { id: '4-9', name: 'Pelvis', fact: 'A massive pelvis anchored its powerful legs to its body.' },
+            { id: '4-10', name: 'Skull framework', fact: 'The frill was full of blood vessels and could change color with blood flow!' }
+        ]
+    },
+    5: {
+        name: 'Pterodactylus',
+        description: 'A flying reptile \u2014 one of the first pterosaurs ever discovered.',
+        period: 'Late Jurassic (150\u2013148 million years ago)',
+        length: '1 m (1.5 m wingspan)',
+        weight: '2.5 kg',
+        bones: [
+            { id: '5-1', name: 'Skull', fact: 'A skull with a long beak and sharp teeth \u2014 perfect for catching fish!' },
+            { id: '5-2', name: 'Eye sockets', fact: 'Large eyes suggest excellent vision \u2014 important for hunting in the air.' },
+            { id: '5-3', name: 'Neck vertebrae', fact: 'A flexible S-shaped neck allowed it to maneuver during flight.' },
+            { id: '5-4', name: 'Wing bone', fact: 'The main wing bone \u2014 the humerus \u2014 was hollow to reduce weight.' },
+            { id: '5-5', name: 'Wing finger', fact: 'Its fourth finger was incredibly long and supported the wing membrane!' },
+            { id: '5-6', name: 'Wing membrane', fact: 'The skin membrane between body and wings could stretch up to 25 cm!' },
+            { id: '5-7', name: 'Breastbone', fact: 'A keel on the breastbone anchored powerful muscles for flapping flight.' },
+            { id: '5-8', name: 'Spine', fact: 'A lightweight spine with air sacs \u2014 just like in birds!' },
+            { id: '5-9', name: 'Pelvis', fact: 'Its pelvis was small \u2014 its whole body was built for flying.' },
+            { id: '5-10', name: 'Hind limbs', fact: 'Short legs still helped during takeoff and landing.' }
+        ]
+    }
+};
+
+/**
+ * Переключить язык текстов динозавров (мутирует DINO_DATA на месте).
+ * @param {'ru'|'en'} lang
+ */
+export function setDinoLanguage(lang) {
+    const table = lang === 'en' ? DINO_TEXT_EN : DINO_TEXT_RU;
+    Object.keys(DINO_DATA).forEach(id => {
+        const src = table[id];
+        if (!src) return;
+        const target = DINO_DATA[id];
+        target.name = src.name;
+        target.description = src.description;
+        target.period = src.period;
+        target.length = src.length;
+        target.weight = src.weight;
+        target.bones.forEach((bone, i) => {
+            const srcBone = src.bones[i];
+            if (srcBone) {
+                bone.name = srcBone.name;
+                bone.fact = srcBone.fact;
+            }
+        });
+    });
+}
 
 // Получить все ID костей для определённого динозавра
 export function getDinoBoneIds(dinoId) {

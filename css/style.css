@@ -1,3 +1,8 @@
+html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -7,8 +12,18 @@
 
 body {
     background-color: #0b0704;
+    background-image:
+        radial-gradient(ellipse 900px 500px at 50% -8%, rgba(224, 169, 109, 0.22), transparent 60%),
+        radial-gradient(1px 1px at 20% 15%, rgba(255, 224, 178, 0.35) 50%, transparent 51%),
+        radial-gradient(1px 1px at 68% 8%, rgba(255, 224, 178, 0.3) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 85% 22%, rgba(255, 224, 178, 0.25) 50%, transparent 51%),
+        radial-gradient(1px 1px at 40% 30%, rgba(255, 224, 178, 0.2) 50%, transparent 51%),
+        repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 2px, transparent 2px, transparent 42px),
+        linear-gradient(180deg, #1c1109 0%, #150c06 30%, #0f0805 60%, #0b0704 100%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: #f0e6d2;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Fredoka', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -22,6 +37,10 @@ body {
     align-items: center;
     gap: 10px;
     margin-bottom: 12px;
+    width: 100%;
+    max-width: 548px;
+    padding: 0 8px;
+    box-sizing: border-box;
 }
 
 h1 {
@@ -33,13 +52,16 @@ h1 {
 .museum-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 10px;
     background: #1e130a;
     padding: 6px 14px;
     border-radius: 20px;
     border: 1px solid #e0a96d;
     font-size: 13px;
     font-weight: bold;
+    max-width: 100%;
 }
 
 .progress-bg {
@@ -62,6 +84,132 @@ h1 {
     display: flex;
     gap: 8px;
 }
+
+/* ── Новый HUD уровня: значок уровня + карточка цели ── */
+.level-hud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+    max-width: 520px;
+}
+
+.level-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(160deg, #3d2817, #2b1c10);
+    border: 2px solid #8c5e38;
+    border-radius: 14px;
+    padding: 8px 14px;
+    flex-shrink: 0;
+}
+
+.level-badge-icon {
+    font-size: 26px;
+}
+
+.level-badge-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.level-badge-label {
+    font-size: 10px;
+    color: #d4b28c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.level-badge-num {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffd700;
+}
+
+.goal-card {
+    flex: 1;
+    min-width: 180px;
+    background: #1e130a;
+    border: 2px solid #3d2817;
+    border-radius: 14px;
+    padding: 8px 14px;
+}
+
+.goal-card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.goal-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.goal-label {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #d4b28c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.goal-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffd700;
+    flex-shrink: 0;
+}
+
+.goal-bar-wrap {
+    height: 8px;
+    background: #0b0704;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #3d2817;
+}
+
+.goal-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ff9f43, #ffd700);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* ── Чипы-статы: ходы / очки / инструменты ── */
+.stats-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(160deg, #2b1c10, #1a110a);
+    border: 2px solid #543922;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.chip-icon {
+    font-size: 16px;
+}
+
+.chip-moves .chip-value { color: #74b9ff; }
+.chip-score .chip-value { color: #ffd700; }
+.chip-tools .chip-value { color: #55efc4; }
 
 .level-btn, .booster-btn {
     background: #2b1c10;
@@ -106,6 +254,9 @@ h1 {
 
 .game-container {
     position: relative;
+    width: 100%;
+    max-width: 548px;
+    margin: 0 auto;
 }
 
 .bone-fly-layer {
@@ -158,6 +309,18 @@ canvas {
     box-shadow: 0 8px 24px rgba(0,0,0,0.8);
     background: #140d07;
     display: block;
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+#settingsOverlay {
+    position: fixed;
+    border-radius: 0;
+    z-index: 200;
 }
 
 .modal-overlay {
@@ -177,48 +340,89 @@ canvas {
 }
 
 .modal-card {
-    background: #2b1c10;
+    background: linear-gradient(165deg, #2b1c10, #1c130a);
     border: 3px solid #e0a96d;
-    border-radius: 12px;
-    padding: 24px;
+    border-radius: 20px;
+    padding: 28px 24px;
     text-align: center;
-    width: 280px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    width: 300px;
+    max-width: 88vw;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 30px rgba(224,169,109,0.15);
+}
+
+.modal-icon-badge {
+    font-size: 52px;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
 }
 
 .modal-card h2 {
     color: #ffd700;
-    font-size: 20px;
+    font-size: 21px;
+    font-weight: 700;
     margin-bottom: 8px;
 }
 
 .modal-card p {
     font-size: 14px;
     color: #d4b28c;
-    margin-bottom: 16px;
+    line-height: 1.5;
+    margin-bottom: 18px;
 }
 
 .modal-stats {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 22px;
+    color: #ffd700;
 }
 
-.modal-btn {
-    background: #8c5e38;
-    color: #fff;
-    border: 2px solid #e0a96d;
-    padding: 8px 20px;
-    border-radius: 6px;
-    font-weight: bold;
+.modal-stats-icon {
+    font-size: 20px;
+}
+
+.modal-btn-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+}
+
+.modal-icon-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid #543922;
+    background: #2b1c10;
+    font-size: 22px;
     cursor: pointer;
-    font-size: 14px;
-    transition: transform 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.modal-btn:hover {
-    transform: scale(1.05);
+.modal-icon-btn:hover {
+    transform: scale(1.1);
+    border-color: #e0a96d;
+}
+
+.modal-icon-btn-main {
+    width: 64px;
+    height: 64px;
+    font-size: 28px;
+    background: linear-gradient(135deg, #ffd700, #e0a96d);
+    color: #2b1c10;
+    border-color: #ffd700;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.modal-icon-btn-main:hover {
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
 }
 
 .screen-view {
@@ -266,6 +470,66 @@ canvas {
     color: #fff;
     border-color: #e0a96d;
     box-shadow: 0 0 10px rgba(224, 169, 109, 0.4);
+}
+
+.nav-tab-settings {
+    padding: 10px 16px;
+    font-size: 18px;
+}
+
+.settings-card {
+    width: 280px;
+}
+
+.settings-lang-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #d4b28c;
+    margin-bottom: 10px !important;
+}
+
+.lang-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.lang-btn {
+    background: #2b1c10;
+    color: #d4b28c;
+    border: 2px solid #543922;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.lang-btn:hover {
+    border-color: #8c5e38;
+    background: #3d2817;
+}
+
+.lang-btn.active {
+    background: linear-gradient(135deg, #8c5e38, #5c3a1b);
+    color: #fff;
+    border-color: #ffd700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.nav-tab:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: grayscale(0.4);
+}
+
+.nav-tab:disabled:hover {
+    background: #1a110a;
+    border-color: #3d2817;
 }
 
 #museumScreen {
@@ -809,15 +1073,25 @@ img.bone-icon {
 }
 
 .level-map::before {
-    content: '';
+    display: none;
+}
+
+.dna-layer {
     position: absolute;
     top: 0;
-    bottom: 0;
     left: 50%;
-    width: 4px;
-    background: repeating-linear-gradient(to bottom, #543922 0 10px, transparent 10px 20px);
     transform: translateX(-50%);
+    width: 160px;
+    height: 100%;
     z-index: 0;
+    pointer-events: none;
+}
+
+.dna-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.35));
 }
 
 .level-node {
@@ -875,4 +1149,31 @@ img.bone-icon {
 @keyframes pulseNode {
     0%, 100% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.4); }
     50% { box-shadow: 0 0 22px rgba(255, 215, 0, 0.8); }
+}
+
+/* ── Адаптив для узких экранов: не даём элементам наезжать друг на друга ── */
+@media (max-width: 420px) {
+    body { padding-top: 8px; }
+
+    h1 { font-size: 19px; }
+
+    .nav-tab { padding: 8px 16px; font-size: 13px; }
+
+    .museum-bar { font-size: 11px; padding: 5px 10px; }
+    .progress-bg { width: 70px; }
+
+    .level-badge { padding: 6px 10px; }
+    .level-badge-icon { font-size: 20px; }
+    .level-badge-num { font-size: 16px; }
+
+    .goal-card { min-width: 140px; padding: 6px 10px; }
+    .goal-label { font-size: 11px; }
+
+    .chip { padding: 5px 10px; font-size: 13px; }
+
+    .booster-btn { padding: 6px 10px; font-size: 13px; }
+
+    .modal-icon-btn { width: 44px; height: 44px; font-size: 18px; }
+    .modal-icon-btn-main { width: 54px; height: 54px; font-size: 22px; }
+    .modal-btn-row { gap: 10px; }
 }

@@ -38,6 +38,11 @@ export class Tile {
         return CONFIG.COLORS[COLOR_KEYS[this.type]]; 
     }
 
+    get colorKey() {
+        if (this.isCrate || this.isFossil) return null;
+        return COLOR_KEYS[this.type];
+    }
+
     _calcX(c) { return CONFIG.OFFSET_X + c * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP); }
     _calcY(r) { return CONFIG.OFFSET_Y + r * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP); }
 
