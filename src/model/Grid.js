@@ -88,7 +88,7 @@ export class Grid {
         const t1 = this.tiles[r1][c1];
         const t2 = this.tiles[r2][c2];
 
-        if (!t1 || !t2 || t1.isCrate || t2.isCrate || t1.isFossil || t2.isFossil) return false;
+        if (!t1 || !t2 || t1.isCrate || t2.isCrate) return false;
 
         this.tiles[r1][c1] = t2;
         this.tiles[r2][c2] = t1;
@@ -277,6 +277,8 @@ export class Grid {
                             if (unburied) unburiedFossilsCount++;
                         }
 
+                        // Проверяем соседей по всем 4 сторонам (горизонталь и вертикаль),
+                        // чтобы комбинация любого направления могла уничтожить стоящий рядом ящик.
                         const neighbors = [
                             {c: c+1, r: r}, {c: c-1, r: r},
                             {c: c, r: r+1}, {c: c, r: r-1}

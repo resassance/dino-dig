@@ -1,4 +1,5 @@
 import { CONFIG, DINO_DATA } from '../config.js';
+import { t } from '../i18n.js';
 import { Grid } from '../model/Grid.js';
 import { DigLayer } from '../model/DigLayer.js';
 import { InputManager } from './InputManager.js';
@@ -50,6 +51,12 @@ export class Game {
         this.pendingBonuses = [];
         this.activeTool = null;
         this.unlockedThisLevel = [];
+        this.paused = false;
+
+        // Не показываем рекламу после КАЖДОГО уровня — слишком навязчиво для детской игры.
+        // Показываем раз в несколько уровней (см. _maybeShowInterstitialThenAdvance).
+        this._levelsSinceAd = 0;
+        this.LEVELS_BETWEEN_ADS = 3;
 
         // Раскопки идут строго по одному динозавру за раз: пока не соберём его целиком,
         // новые кости не начинают "размазываться" по другим динозаврам.
@@ -67,7 +74,11 @@ export class Game {
             moves: document.getElementById('moves'),
             tools: document.getElementById('tools'),
             goalText: document.getElementById('goalText'),
+            goalIcon: document.getElementById('goalIcon'),
+            goalLabel: document.getElementById('goalLabel'),
+            goalBarFill: document.getElementById('goalBarFill'),
             levelNumber: document.getElementById('levelNumber'),
+            levelTypeIcon: document.getElementById('levelTypeIcon'),
             museumCount: document.getElementById('museumCount'),
             museumProgress: document.getElementById('museumProgress'),
             currentDinoEmoji: document.getElementById('currentDinoEmoji'),
@@ -75,16 +86,17 @@ export class Game {
             btnPickaxe: document.getElementById('btnPickaxe'),
             btnDynamite: document.getElementById('btnDynamite'),
             modalOverlay: document.getElementById('modalOverlay'),
+            modalIconBadge: document.getElementById('modalIconBadge'),
             modalTitle: document.getElementById('modalTitle'),
             modalDesc: document.getElementById('modalDesc'),
             modalScore: document.getElementById('modalScore'),
             btnModalNext: document.getElementById('btnModalNext'),
             btnModalMuseum: document.getElementById('btnModalMuseum'),
+            btnModalHome: document.getElementById('btnModalHome'),
             boneFlyLayer: document.getElementById('boneFlyLayer'),
             btnNavMuseum: document.getElementById('btnNavMuseum')
         };
 
-        this._initMuseumButton();
         this._bindUI();
 
         this.loadLevelByNumber(this.levelNumber);
@@ -188,29 +200,6 @@ export class Game {
         window.dispatchEvent(new CustomEvent('switchTab', { detail: 'game' }));
     }
 
-    _initMuseumButton() {
-        const nextBtn = this.ui.btnModalNext;
-        if (!nextBtn || !nextBtn.parentNode) return;
-
-        const parent = nextBtn.parentNode;
-
-        parent.style.display = 'flex';
-        parent.style.justifyContent = 'center';
-        parent.style.alignItems = 'center';
-        parent.style.gap = '12px';
-        parent.style.marginTop = '16px';
-        parent.style.flexWrap = 'wrap';
-
-        if (!this.ui.btnModalMuseum) {
-            const btn = document.createElement('button');
-            btn.id = 'btnModalMuseum';
-            btn.className = nextBtn.className || 'btn';
-            btn.textContent = '🏛️ В музей';
-            parent.appendChild(btn);
-            this.ui.btnModalMuseum = btn;
-        }
-    }
-
     _bindUI() {
         const bindBooster = (btn, toolName) => {
             if (!btn) return;
@@ -231,7 +220,7 @@ export class Game {
             this.ui.btnModalNext.addEventListener('click', () => {
                 this.ui.modalOverlay.classList.add('hidden');
                 if (this.state === STATE.VICTORY) {
-                    this.loadNextLevel();
+                    this._maybeShowInterstitialThenAdvance();
                 } else {
                     this.loadLevelByNumber(this.levelNumber);
                 }
@@ -244,6 +233,52 @@ export class Game {
                 window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));
             });
         }
+
+        if (this.ui.btnModalHome) {
+            this.ui.btnModalHome.addEventListener('click', () => {
+                this.ui.modalOverlay.classList.add('hidden');
+                window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
+            });
+        }
+    }
+
+    // Реклама показывается только по явному действию игрока (нажатие "дальше") и не
+    // чаще, чем раз в LEVELS_BETWEEN_ADS уровней — иначе для детской игры с короткими
+    // уровнями это было бы слишком навязчиво и не является "логической паузой" по сути.
+    _maybeShowInterstitialThenAdvance() {
+        // Перед запуском следующего уровня сбрасываем состояние и закрываем модалку —
+        // иначе при показе рекламы состояние VICTORY остаётся, и новый уровень
+        // отображается некорректно (input/swaps заблокированы, либо игра крутится
+        // в "бесконечной ротации" между старым и новым уровнем).
+        this.state = STATE.IDLE;
+
+        this._levelsSinceAd++;
+        const bridge = window.Bridge;
+        const shouldShowAd = bridge && this._levelsSinceAd >= this.LEVELS_BETWEEN_ADS;
+
+        if (!shouldShowAd) {
+            this.loadNextLevel();
+            return;
+        }
+
+        this._levelsSinceAd = 0;
+
+        // Останавливаем игровой цикл на время показа рекламы — иначе update() крутит
+        // старые тайлы и состояния, и после закрытия рекламы игрок видит визуальный
+        // "фантомный" уровень. Возобновим в колбэке.
+        this.paused = true;
+        if (bridge) bridge.gameplayStop();
+
+        const resumeAndAdvance = () => {
+            this.paused = false;
+            this.loadNextLevel();
+        };
+
+        bridge.showInterstitial({
+            onClose: resumeAndAdvance,
+            onError: resumeAndAdvance,
+            onOffline: resumeAndAdvance
+        });
     }
 
     _updateBoosterUI() {
@@ -299,6 +334,8 @@ export class Game {
         this.ui.modalOverlay.classList.add('hidden');
         this._updateBoosterUI();
         this.updateUI();
+
+        if (window.Bridge) window.Bridge.gameplayStart();
     }
 
     useTool(toolType, c, r) {
@@ -361,6 +398,20 @@ export class Game {
         if (this.ui.goalText) this.ui.goalText.textContent = `${this.goalProgress}/${this.goalTarget}`;
         if (this.ui.levelNumber) this.ui.levelNumber.textContent = this.levelNumber;
 
+        const typeMeta = {
+            1: { icon: '⛏️', label: t('goalLabelDig') },
+            2: { icon: '📦', label: t('goalLabelCrates') },
+            3: { icon: '🦴', label: t('goalLabelDrop') }
+        };
+        const meta = typeMeta[this.currentLevel] || typeMeta[1];
+        if (this.ui.levelTypeIcon) this.ui.levelTypeIcon.textContent = meta.icon;
+        if (this.ui.goalIcon) this.ui.goalIcon.textContent = meta.icon;
+        if (this.ui.goalLabel) this.ui.goalLabel.textContent = meta.label;
+        if (this.ui.goalBarFill) {
+            const goalPct = this.goalTarget > 0 ? Math.min(100, (this.goalProgress / this.goalTarget) * 100) : 0;
+            this.ui.goalBarFill.style.width = `${goalPct}%`;
+        }
+
         const dino = this.currentDinoId !== null ? DINO_DATA[this.currentDinoId] : null;
         const progress = (this.museum && dino) ? this.museum.getDinoProgress(dino.id) : { unlocked: 0, total: 0 };
 
@@ -394,9 +445,10 @@ export class Game {
     showEndModal(isWin) {
         if (isWin) {
             this.state = STATE.VICTORY;
-            this.ui.modalTitle.textContent = '🎉 Победа!';
+            if (this.ui.modalIconBadge) this.ui.modalIconBadge.textContent = '🎉';
+            this.ui.modalTitle.textContent = t('modalWinTitle');
 
-            let desc = 'Отличная работа! Уровень успешно пройден.';
+            let desc = t('modalWinDesc');
 
             if (this.unlockedThisLevel.length > 0) {
                 const boneInfo = {};
@@ -409,19 +461,26 @@ export class Game {
                 for (const dinoId in boneInfo) {
                     bonesHtml += `<br>🦕 ${boneInfo[dinoId].join(', ')}`;
                 }
-                desc += `<br><br><b>🦴 Собрано деталей (${this.unlockedThisLevel.length}):</b>${bonesHtml}`;
+                desc += `<br><br><b>${t('modalBonesCollected', this.unlockedThisLevel.length)}</b>${bonesHtml}`;
             }
 
             this.ui.modalDesc.innerHTML = desc;
-            this.ui.btnModalNext.textContent = '🎮 Продолжить';
+            if (this.ui.btnModalNext) {
+                this.ui.btnModalNext.textContent = '▶️';
+                this.ui.btnModalNext.title = t('modalNextTitle');
+            }
             if (this.ui.btnModalMuseum) {
-                this.ui.btnModalMuseum.style.display = 'inline-block';
+                this.ui.btnModalMuseum.style.display = 'inline-flex';
             }
         } else {
             this.state = STATE.GAMEOVER;
-            this.ui.modalTitle.textContent = '❌ Закончились ходы!';
-            this.ui.modalDesc.textContent = 'Не удалось выполнить цель уровня.';
-            this.ui.btnModalNext.textContent = '🔄 Попробовать снова';
+            if (this.ui.modalIconBadge) this.ui.modalIconBadge.textContent = '⛔';
+            this.ui.modalTitle.textContent = t('modalLoseTitle');
+            this.ui.modalDesc.textContent = t('modalLoseDesc');
+            if (this.ui.btnModalNext) {
+                this.ui.btnModalNext.textContent = '🔄';
+                this.ui.btnModalNext.title = t('modalRetryTitle');
+            }
             if (this.ui.btnModalMuseum) {
                 this.ui.btnModalMuseum.style.display = 'none';
             }
@@ -429,12 +488,15 @@ export class Game {
 
         // Проверяем, собраны ли все динозавры
         if (this.museum && this.museum.getTotalUnlocked() >= this.museum.getTotalBones()) {
-            this.ui.modalTitle.textContent = '🏆 ВСЕ ДИНОЗАВРЫ СОБРАНЫ!';
-            this.ui.modalDesc.innerHTML += '<br><br>Поздравляем! Ты собрал все 60 костей 6 динозавров!';
+            if (this.ui.modalIconBadge) this.ui.modalIconBadge.textContent = '🏆';
+            this.ui.modalTitle.textContent = t('modalAllDoneTitle');
+            this.ui.modalDesc.innerHTML += `<br><br>${t('modalAllDoneDesc')}`;
         }
 
         this.ui.modalScore.textContent = this.score;
         this.ui.modalOverlay.classList.remove('hidden');
+
+        if (window.Bridge) window.Bridge.gameplayStop();
     }
 
     update() {
@@ -484,8 +546,9 @@ export class Game {
                             this.score += collected * 200;
                             this._flyBonesEffect(collected);
                             this.updateUI();
-                            this.grid.applyGravity();
                         }
+                        // Всегда применяем гравитацию на уровне 3, чтобы окаменелости падали
+                        this.grid.applyGravity();
                     }
 
                     const result = this.grid.findAndMarkMatches();
@@ -510,8 +573,18 @@ export class Game {
     }
 
     loop() {
-        this.update();
-        this.renderer.draw(this.grid, this.input.selected, this.digLayer);
+        if (!this.paused) {
+            this.update();
+            this.renderer.draw(this.grid, this.input.selected, this.digLayer);
+        }
         requestAnimationFrame(() => this.loop());
+    }
+
+    pause() {
+        this.paused = true;
+    }
+
+    resume() {
+        this.paused = false;
     }
 }
