@@ -245,11 +245,18 @@ export class Game {
     // Реклама показывается только по явному действию игрока (нажатие "дальше") и не
     // чаще, чем раз в LEVELS_BETWEEN_ADS уровней — иначе для детской игры с короткими
     // уровнями это было бы слишком навязчиво и не является "логической паузой" по сути.
+    //
+    // ВАЖНО: НЕ ставим this.paused = true перед showInterstitial. SDK рекламы (Yandex
+    // и CrazyGames) сам управляет паузой через колбэки onPause/onResume, которые мы
+    // передали в bridge.init({ onPause, onResume }). Если мы дополнительно поставим
+    // paused=true здесь, то после закрытия рекламы onResume вызовет game.resume(),
+    // который выставит paused=false, и всё хорошо. Но если SDK не вызовет onResume
+    // (например, в debug-режиме или при ошибке) — игра останется навечно замороженной.
+    // Поэтому мы лишь сбрасываем state и сразу переходим к следующему уровню.
     _maybeShowInterstitialThenAdvance() {
-        // Перед запуском следующего уровня сбрасываем состояние и закрываем модалку —
-        // иначе при показе рекламы состояние VICTORY остаётся, и новый уровень
-        // отображается некорректно (input/swaps заблокированы, либо игра крутится
-        // в "бесконечной ротации" между старым и новым уровнем).
+        // Перед показом рекламы сбрасываем геймплейное состояние — иначе STATE.VICTORY
+        // от предыдущего уровня "перетечёт" в новый уровень, и update() обработает
+        // победу повторно, вызывая бесконечную ротацию на каждом 3-м уровне.
         this.state = STATE.IDLE;
 
         this._levelsSinceAd++;
@@ -262,15 +269,9 @@ export class Game {
         }
 
         this._levelsSinceAd = 0;
-
-        // Останавливаем игровой цикл на время показа рекламы — иначе update() крутит
-        // старые тайлы и состояния, и после закрытия рекламы игрок видит визуальный
-        // "фантомный" уровень. Возобновим в колбэке.
-        this.paused = true;
-        if (bridge) bridge.gameplayStop();
-
+        // Не паузим loop() — bridge сам вызовет game.pause() через onPause. Если мы
+        // дублируем паузу здесь, при сбое SDK игрок окажется замороженным.
         const resumeAndAdvance = () => {
-            this.paused = false;
             this.loadNextLevel();
         };
 
@@ -302,7 +303,16 @@ export class Game {
         this.currentDinoId = pool[Math.floor(Math.random() * pool.length)];
     }
 
+    // Универсальная "мягкая" загрузка уровня: сбрасывает ВСЕ остаточные состояния
+    // (input.selected, activeTool, combo, pendingBonuses, кеш рендерера) и только
+    // потом пересоздаёт сетку. Это критично для переходов между уровнями: без
+    // полного сброса input/state после показа модалки победы остаются тайлы
+    // предыдущего уровня, и новый уровень выглядит "залипшим" (на каждом 3-м
+    // уровне — тип чередуется, и старые тайлы перекрывают новые).
     loadLevel(levelType = 1, tier = 0) {
+        // 1) Полностью сбрасываем геймплейное состояние ДО любых операций с сеткой,
+        //    чтобы update() и input не дёргали устаревшие ссылки.
+        this.state = STATE.IDLE;
         this.currentLevel = levelType;
         this._ensureTargetDino();
 
@@ -317,8 +327,26 @@ export class Game {
         this.pendingBonuses = [];
         this.activeTool = null;
         this.unlockedThisLevel = [];
-        this.input.setActiveTool(null);
-        this.state = STATE.IDLE;
+
+        // 2) Сбрасываем input — иначе selected указывает на ячейку предыдущего уровня,
+        //    и любое движение мыши вызовет попытку свопа со старой/несуществующей плиткой.
+        if (this.input) {
+            this.input.setActiveTool(null);
+            this.input.selected = null;
+        }
+
+        // 3) Закрываем модалку и обновляем UI до пересоздания сетки, чтобы пользователь
+        //    сразу видел корректный номер/тип/цель нового уровня, а не старое значение.
+        if (this.ui && this.ui.modalOverlay) this.ui.modalOverlay.classList.add('hidden');
+        this._updateBoosterUI();
+        this.updateUI();
+
+        // 4) Полностью пересоздаём сетку и слой раскопок — НЕ вызываем init() на
+        //    существующих объектах. Старый Grid мог держать тайлы с isMatched=true
+        //    или со старыми координатами x/y, наложение которых и давало "бесконечную
+        //    ротацию" на каждом 3-м уровне.
+        this.grid = new Grid();
+        this.digLayer = new DigLayer();
 
         if (levelType === 1) {
             this.digLayer.init(params.digDepth, params.fossilCount);
@@ -331,9 +359,11 @@ export class Game {
             this.grid.init(3, { fossilCount: params.fossilCount });
         }
 
-        this.ui.modalOverlay.classList.add('hidden');
-        this._updateBoosterUI();
-        this.updateUI();
+        // 5) Принудительно прогоняем первый кадр рендера, чтобы новый уровень появился
+        //    мгновенно, а не "мигал" предыдущим состоянием один кадр.
+        if (this.renderer && this.grid && this.digLayer) {
+            this.renderer.draw(this.grid, this.input.selected, this.digLayer);
+        }
 
         if (window.Bridge) window.Bridge.gameplayStart();
     }
@@ -575,7 +605,9 @@ export class Game {
     loop() {
         if (!this.paused) {
             this.update();
-            this.renderer.draw(this.grid, this.input.selected, this.digLayer);
+            if (this.renderer && this.grid) {
+                this.renderer.draw(this.grid, this.input.selected, this.digLayer);
+            }
         }
         requestAnimationFrame(() => this.loop());
     }

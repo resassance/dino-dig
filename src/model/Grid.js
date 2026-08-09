@@ -37,7 +37,13 @@ export class Grid {
         const crateCount = options.crateCount || 8;
         const fossilCount = Math.min(options.fossilCount || 3, this.cols);
 
+        // Полностью пересоздаём массив тайлов. Нельзя оставлять ссылку на старый,
+        // потому что рендерер и update() могут использовать его пока init() ещё не
+        // дошёл до заполнения. Двойное присваивание гарантирует, что у GC нет
+        // промежуточных ссылок на старые плитки.
+        this.tiles.length = 0;
         this.tiles = [];
+        this.lastMovedPos = null;
 
         const cratePositions = new Set();
         const fossilPositions = new Set();
