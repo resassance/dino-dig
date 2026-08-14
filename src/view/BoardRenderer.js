@@ -130,20 +130,21 @@ export class BoardRenderer {
         ctx.translate(-cx, -cy);
 
         if (tile.isFossil) {
-            ctx.fillStyle = '#d9c8b0';
-            this._roundRect(tx, ty, drawSize, drawSize, 10);
-            ctx.fill();
-
-            ctx.strokeStyle = '#8c775a';
-            ctx.lineWidth = 2;
-            this._roundRect(tx, ty, drawSize, drawSize, 10);
-            ctx.stroke();
-
             const sprite = getReadyImage(ASSETS.fossilTileSprite);
             if (sprite) {
+                // Свой спрайт кости — без квадратного фона/обводки под ним.
                 const pad2 = drawSize * 0.18;
                 ctx.drawImage(sprite, tx + pad2, ty + pad2, drawSize - pad2 * 2, drawSize - pad2 * 2);
             } else {
+                ctx.fillStyle = '#d9c8b0';
+                this._roundRect(tx, ty, drawSize, drawSize, 10);
+                ctx.fill();
+
+                ctx.strokeStyle = '#8c775a';
+                ctx.lineWidth = 2;
+                this._roundRect(tx, ty, drawSize, drawSize, 10);
+                ctx.stroke();
+
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '22px serif';
                 ctx.textAlign = 'center';
@@ -178,49 +179,76 @@ export class BoardRenderer {
             ctx.textBaseline = 'middle';
             ctx.fillText('📦', cx, cy);
 
-        } else {
-            const c = tile.color;
-            if (!c) { ctx.restore(); return; }
-
+        } else if (tile.bonus && tile.bonus !== BONUS_TYPE.NONE) {
+            // Баффы не принадлежат никакому цвету/типу камушка — рисуем их нейтрально,
+            // одинаково для любой линии/комбо, их когда-либо породившей.
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
             ctx.fill();
 
-            ctx.fillStyle = c.main;
+            const grad = ctx.createLinearGradient(tx, ty, tx, ty + drawSize);
+            grad.addColorStop(0, '#3a3560');
+            grad.addColorStop(1, '#1c1a33');
+            ctx.fillStyle = grad;
             this._roundRect(tx, ty, drawSize, drawSize, 6);
             ctx.fill();
 
-            ctx.fillStyle = c.light;
-            ctx.beginPath();
-            ctx.ellipse(tx + drawSize/2, ty + drawSize/3, drawSize/3, drawSize/5, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.strokeStyle = c.dark;
+            ctx.strokeStyle = '#ffd700';
             ctx.lineWidth = 2;
             this._roundRect(tx, ty, drawSize, drawSize, 6);
             ctx.stroke();
 
-            if (tile.bonus && tile.bonus !== BONUS_TYPE.NONE) {
-                const sprite = getReadyImage(ASSETS.bonusSprites[tile.bonus]);
-                if (sprite) {
-                    const bp = drawSize * 0.2;
-                    ctx.drawImage(sprite, tx + bp, ty + bp, drawSize - bp * 2, drawSize - bp * 2);
-                } else {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 16px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
+            const sprite = getReadyImage(ASSETS.bonusSprites[tile.bonus]);
+            if (sprite) {
+                const bp = drawSize * 0.2;
+                ctx.drawImage(sprite, tx + bp, ty + bp, drawSize - bp * 2, drawSize - bp * 2);
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
 
-                    if (tile.bonus === BONUS_TYPE.LINE_H) {
-                        ctx.fillText('↔', cx, cy);
-                    } else if (tile.bonus === BONUS_TYPE.LINE_V) {
-                        ctx.fillText('↕', cx, cy);
-                    } else if (tile.bonus === BONUS_TYPE.BOMB) {
-                        ctx.fillText('🧨', cx, cy);
-                    } else if (tile.bonus === BONUS_TYPE.COLOR_BOMB) {
-                        ctx.fillText('⛏️', cx, cy);
-                    }
+                if (tile.bonus === BONUS_TYPE.LINE_H) {
+                    ctx.fillText('↔', cx, cy);
+                } else if (tile.bonus === BONUS_TYPE.LINE_V) {
+                    ctx.fillText('↕', cx, cy);
+                } else if (tile.bonus === BONUS_TYPE.BOMB) {
+                    ctx.fillText('🧨', cx, cy);
+                } else if (tile.bonus === BONUS_TYPE.COLOR_BOMB) {
+                    ctx.fillText('⛏️', cx, cy);
                 }
+            }
+        } else {
+            const c = tile.color;
+            if (!c) { ctx.restore(); return; }
+
+            const sprite = getReadyImage(ASSETS.tileSprite(tile.colorKey));
+            if (sprite) {
+                // Свой спрайт камушка — рисуем как есть, без квадратного фона/обводки
+                // под ним (только скругляем углы, чтобы вписаться в сетку поля).
+                ctx.save();
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.clip();
+                ctx.drawImage(sprite, tx, ty, drawSize, drawSize);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
+                ctx.fill();
+
+                ctx.fillStyle = c.main;
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.fill();
+
+                ctx.fillStyle = c.light;
+                ctx.beginPath();
+                ctx.ellipse(tx + drawSize/2, ty + drawSize/3, drawSize/3, drawSize/5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = c.dark;
+                ctx.lineWidth = 2;
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.stroke();
             }
         }
 

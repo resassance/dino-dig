@@ -15,7 +15,10 @@ export class MatchFinder {
             let match = [];
             for (let c = 0; c < CONFIG.COLS; c++) {
                 const t = tiles[r][c];
-                if (t && !t.isCrate && !t.isFossil && !t.isMatched) {
+                // Баффы (LINE_H/LINE_V/BOMB/COLOR_BOMB) не привязаны к цвету/типу камушка
+                // (см. Tile.js) — поэтому, как ящики и кости, они прерывают серию, а не
+                // участвуют в обычном совпадении по цвету.
+                if (t && !t.isCrate && !t.isFossil && !t.isMatched && t.bonus === BONUS_TYPE.NONE) {
                     if (match.length === 0 || match[0].type === t.type) {
                         match.push(t);
                     } else {
@@ -34,7 +37,7 @@ export class MatchFinder {
             let match = [];
             for (let r = 0; r < CONFIG.ROWS; r++) {
                 const t = tiles[r][c];
-                if (t && !t.isCrate && !t.isFossil && !t.isMatched) {
+                if (t && !t.isCrate && !t.isFossil && !t.isMatched && t.bonus === BONUS_TYPE.NONE) {
                     if (match.length === 0 || match[0].type === t.type) {
                         match.push(t);
                     } else {

@@ -1,5 +1,6 @@
 import { DINO_DATA, ASSETS } from '../config.js';
 import { createImgOrEmoji } from '../utils/AssetLoader.js';
+import { t } from '../i18n.js';
 
 export class Museum {
     constructor() {
@@ -81,6 +82,27 @@ export class Museum {
         return newBones;
     }
 
+    /**
+     * Откатить кости, найденные за текущую попытку уровня — вызывается при
+     * поражении/выходе из незавершённого уровня (см. Game.js showEndModal(false)
+     * и pauseMenu*). Кости засчитываются в музей насовсем только при победе.
+     * @param {Array<{id:string}>} bones
+     */
+    removeBones(bones = []) {
+        if (!bones || bones.length === 0) return;
+        let changed = false;
+        bones.forEach(b => {
+            if (b && this.unlockedBones.has(b.id)) {
+                this.unlockedBones.delete(b.id);
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.saveState();
+            this.render();
+        }
+    }
+
     // ─── Прогресс ────────────────────────────────────────────────────
 
     getTotalUnlocked() {
@@ -105,6 +127,31 @@ export class Museum {
 
     isDinoAssembled(dinoId) {
         return this.assembledDinos.has(dinoId);
+    }
+    assembleDino(dinoId) {
+        const dino = DINO_DATA[dinoId];
+        if (!dino) return;
+
+        if (this.assembledDinos.has(dinoId)) return;
+
+        this.assembledDinos.add(dinoId);
+        this.saveAssembledState();
+
+        const bridge = window.Bridge;
+        if (bridge) {
+            bridge.gameplayStop();
+            bridge.showInterstitial({
+                onClose: () => { bridge.gameplayStart(); this.render(); },
+                onError: () => { bridge.gameplayStart(); this.render(); },
+                onOffline: () => { bridge.gameplayStart(); this.render(); }
+            });
+        } else {
+            this.render();
+        }
+    }
+
+    init() {
+        this.render();
     }
 
     // ─── Инициализация ────────────────────────────────────────────────
@@ -175,13 +222,13 @@ export class Museum {
                     <h3>${dino.name}</h3>
                     <small>${dino.latinName} · ${dino.period}</small>
                 </div>
-                ${isAssembled ? '<span class="dino-complete-badge">✅ Собран</span>' : ''}
+                ${isAssembled ? `<span class="dino-complete-badge">${t('assembledBadge')}</span>` : ''}
             </div>
             <div class="dino-header-progress">
                 <div class="dino-prog-bar-wrap">
                     <div class="dino-prog-bar" style="width:${(unlocked/total)*100}%"></div>
                 </div>
-                <span>${unlocked} / ${total} костей</span>
+                <span>${t('bonesCountLabel', unlocked, total)}</span>
             </div>
         `;
         this.gridEl.appendChild(header);
@@ -224,13 +271,27 @@ export class Museum {
             const assembleBar = document.createElement('div');
             assembleBar.className = 'assemble-cta';
             assembleBar.innerHTML = `
-                <p>Все фрагменты найдены! Собери скелет, чтобы увидеть экспонат.</p>
-                <button class="btn-assemble-gold" id="btnAssembleNow">✨ Собрать скелет</button>
+                <p>${t('assembleCtaText')}</p>
+                <button class="btn-assemble-gold" id="btnAssembleNow">${t('assembleBtn')}</button>
             `;
+            assembleBar.querySelector('#btnAssembleNow').addEventListener('click', () => {
+                this.assembleDino(dino.id);
+            });
             assembleBar.querySelector('#btnAssembleNow').addEventListener('click', () => {
                 this.assembledDinos.add(dino.id);
                 this.saveAssembledState();
-                this.render();
+
+                const bridge = window.Bridge;
+                if (bridge) {
+                    bridge.gameplayStop();
+                    bridge.showInterstitial({
+                        onClose: () => { bridge.gameplayStart(); this.render(); },
+                        onError: () => { bridge.gameplayStart(); this.render(); },
+                        onOffline: () => { bridge.gameplayStart(); this.render(); }
+                    });
+                } else {
+                    this.render();
+                }
             });
             this.gridEl.appendChild(assembleBar);
         }
@@ -259,9 +320,9 @@ export class Museum {
         modal.innerHTML = `
             <div class="dino-modal-card">
                 <div class="dino-modal-icon">${dino.emoji}✨</div>
-                <h2>Все кости собраны!</h2>
-                <p>Поздравляем! Ты нашёл все ${dino.bones.length} фрагментов скелета<br><b>${dino.name}</b>!</p>
-                <button id="btnStartAssemble" class="btn-assemble-gold">🏛️ Перейти в музей</button>
+                <h2>${t('dinoAssembledTitle')}</h2>
+                <p>${t('dinoAssembledDesc', dino.bones.length, dino.name)}</p>
+                <button id="btnStartAssemble" class="btn-assemble-gold">${t('goToMuseumBtn')}</button>
             </div>
         `;
         document.body.appendChild(modal);
@@ -281,22 +342,22 @@ export class Museum {
         exhibit.className = 'assembled-exhibit-container';
         exhibit.innerHTML = `
             <div class="mode-toggle-bar">
-                <button class="toggle-btn ${mode === 'skeleton' ? 'active' : ''}" data-mode="skeleton">🦴 Скелет</button>
-                <button class="toggle-btn ${mode === 'alive' ? 'active' : ''}" data-mode="alive">${dino.emoji} Живой</button>
+                <button class="toggle-btn ${mode === 'skeleton' ? 'active' : ''}" data-mode="skeleton">${t('toggleSkeleton')}</button>
+                <button class="toggle-btn ${mode === 'alive' ? 'active' : ''}" data-mode="alive">${t('toggleAlive', dino.emoji)}</button>
             </div>
 
             <div class="dino-display-card">
                 <div class="dino-visual-box">
                     <div class="dino-avatar" id="dinoAvatarSlot"></div>
-                    <div class="dino-badge">${mode === 'skeleton' ? 'Реконструированный скелет' : 'Живой организм'}</div>
+                    <div class="dino-badge">${mode === 'skeleton' ? t('badgeSkeleton') : t('badgeAlive')}</div>
                 </div>
                 <div class="dino-details-box">
-                    <h3>${mode === 'skeleton' ? 'Скелет ' + dino.latinName : dino.name + ' в среде обитания'}</h3>
-                    <p class="dino-bio">${mode === 'skeleton' ? dino.description + ' Полный скелет содержит ' + dino.bones.length + ' фрагментов.' : dino.description}</p>
+                    <h3>${mode === 'skeleton' ? t('exhibitSkeletonTitle', dino.latinName) : t('exhibitAliveTitle', dino.name)}</h3>
+                    <p class="dino-bio">${mode === 'skeleton' ? dino.description + t('exhibitSkeletonBioSuffix', dino.bones.length) : dino.description}</p>
                     <div class="dino-stats">
-                        <span>📏 <b>Длина:</b> ${dino.length}</span>
-                        <span>⚖️ <b>Вес:</b> ${dino.weight}</span>
-                        <span>⏳ <b>Период:</b> ${dino.period}</span>
+                        <span>${t('statLength')} <b>${dino.length}</b></span>
+                        <span>${t('statWeight')} <b>${dino.weight}</b></span>
+                        <span>${t('statPeriod')} <b>${dino.period}</b></span>
                     </div>
                 </div>
             </div>

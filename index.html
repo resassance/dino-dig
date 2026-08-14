@@ -4,37 +4,137 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dino Dig — Match-3</title>
+
+    <!-- Yandex Games SDK: подключаем строго по документации:
+         относительный путь /sdk.js, без async, до любых других скриптов, чтобы YaGames был гарантированно
+         определён к моменту инициализации. -->
+    <script src="/sdk.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+    <div id="customBgLayer" class="custom-bg-layer" aria-hidden="true"></div>
+
     <nav class="main-nav">
-        <button id="btnNavGame" class="nav-tab active">🎮 Раскопки</button>
-        <button id="btnNavMap" class="nav-tab">🗺️ Карта</button>
-        <button id="btnNavMuseum" class="nav-tab">🏛️ Музей</button>
+        <button id="btnSettings" class="pause-btn settings-btn">
+            <span id="settingsIconSlot" class="icon-slot">⚙️</span>
+        </button>
     </nav>
 
-    <div id="gameScreen" class="screen-view">
+    <div id="settingsOverlay" class="modal-overlay hidden">
+        <div class="modal-card settings-card">
+            <div class="modal-icon-badge">⚙️</div>
+            <h2 data-i18n="settingsTitle">Настройки</h2>
+            <p class="settings-lang-label" data-i18n="settingsLang">Язык</p>
+            <div class="lang-toggle">
+                <button id="btnLangRu" class="lang-btn">RU · Русский</button>
+                <button id="btnLangEn" class="lang-btn">EN · English</button>
+            </div>
+            <div class="modal-btn-row">
+                <button id="btnSettingsClose" class="modal-icon-btn modal-icon-btn-main">✖️</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pauseOverlay" class="modal-overlay hidden">
+        <div class="modal-card pause-card">
+            <div class="modal-icon-badge">⏸️</div>
+            <h2 data-i18n="pauseTitle">Пауза</h2>
+            <div class="pause-menu-list">
+                <button id="btnPauseResume" class="pause-menu-btn pause-menu-btn-main">
+                    <span class="pause-menu-icon">▶️</span>
+                    <span data-i18n="pauseResume">Продолжить</span>
+                </button>
+                <button id="btnPauseMap" class="pause-menu-btn">
+                    <span class="pause-menu-icon">🗺️</span>
+                    <span data-i18n="pauseGoMap">На карту</span>
+                </button>
+                <button id="btnPauseMuseum" class="pause-menu-btn">
+                    <span class="pause-menu-icon">🏛️</span>
+                    <span data-i18n="pauseGoMuseum">В музей</span>
+                </button>
+                <button id="btnPauseRestart" class="pause-menu-btn">
+                    <span class="pause-menu-icon">🔄</span>
+                    <span data-i18n="pauseRestart">Начать заново</span>
+                </button>
+                <button id="btnPauseGiveUp" class="pause-menu-btn pause-menu-btn-danger">
+                    <span class="pause-menu-icon">🏳️</span>
+                    <span data-i18n="pauseGiveUp">Сдаться</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pauseConfirmOverlay" class="modal-overlay hidden">
+        <div class="modal-card pause-confirm-card">
+            <div class="modal-icon-badge">❓</div>
+            <h2 data-i18n="pauseConfirmTitle">Точно?</h2>
+            <p id="pauseConfirmDesc" data-i18n="pauseConfirmDesc">Прогресс этой попытки уровня будет потерян.</p>
+            <div class="modal-btn-row">
+                <button id="btnPauseConfirmCancel" class="pause-confirm-btn pause-confirm-btn-cancel" data-i18n="pauseConfirmCancel">Отмена</button>
+                <button id="btnPauseConfirmOk" class="pause-confirm-btn pause-confirm-btn-ok" data-i18n="pauseConfirmOk">Да</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameScreen" class="screen-view hidden">
         <div id="ui">
-            <h1>🦴 DINO DIG</h1>
+            <div class="game-topbar">
+                <button id="btnPause" class="pause-btn">
+                    <span id="pauseIconSlot" class="icon-slot pause-icon-fallback">
+                        <span class="pause-fallback-bar"></span>
+                        <span class="pause-fallback-bar"></span>
+                    </span>
+                </button>
+            </div>
             
             <div class="museum-bar">
                 <span id="currentDinoEmoji">🦴</span>
-                <span>Кости <b id="currentDinoName">—</b>: <b id="museumCount">0</b>/<span id="museumTotal">10</span></span>
+                <span><span id="museumBarLabel" data-i18n="museumBarLabel">Кости</span> <b id="currentDinoName">—</b>: <b id="museumCount">0</b>/<span id="museumTotal">10</span></span>
                 <div class="progress-bg"><div id="museumProgress" class="progress-fill"></div></div>
             </div>
 
-            <div class="stats">
-                <div class="stat">Уровень: <span id="levelNumber">1</span></div>
-                <div class="stat">Цель: <span id="goalText">0/0</span></div>
-                <div class="stat">Ходы: <span id="moves">20</span></div>
-                <div class="stat">Очки: <span id="score">0</span></div>
-                <div class="stat">Инструменты: <span id="tools">0</span></div>
+            <div class="level-hud">
+                <div class="level-badge">
+                    <span class="level-badge-icon" id="levelTypeIcon">⛏️</span>
+                    <div class="level-badge-text">
+                        <span class="level-badge-label" id="levelBadgeLabel" data-i18n="levelBadgeLabel">Уровень</span>
+                        <span class="level-badge-num" id="levelNumber">1</span>
+                    </div>
+                </div>
+
+                <div class="goal-card">
+                    <div class="goal-card-top">
+                        <span class="goal-icon" id="goalIcon">🦴</span>
+                        <span class="goal-label" id="goalLabel">Раскопай кости</span>
+                        <span class="goal-value" id="goalText">0/0</span>
+                    </div>
+                    <div class="goal-bar-wrap"><div class="goal-bar-fill" id="goalBarFill"></div></div>
+                </div>
+            </div>
+
+            <div class="stats-chips">
+                <div class="chip chip-moves" id="chipMoves">
+                    <span class="chip-icon">👣</span>
+                    <span class="chip-value" id="moves">20</span>
+                </div>
+                <div class="chip chip-score" id="chipScore">
+                    <span class="chip-icon">⭐</span>
+                    <span class="chip-value" id="score">0</span>
+                </div>
+                <div class="chip chip-tools" id="chipTools">
+                    <span class="chip-icon">🧰</span>
+                    <span class="chip-value" id="tools">0</span>
+                </div>
             </div>
 
             <div class="boosters">
-                <button id="btnPickaxe" class="booster-btn" draggable="true" data-tool="pickaxe">⛏️ Кирка (1)</button>
-                <button id="btnDynamite" class="booster-btn" draggable="true" data-tool="dynamite">🧨 Динамит (2)</button>
+                <button id="btnPickaxe" class="booster-btn" draggable="true" data-tool="pickaxe"><span id="pickaxeLabel" data-i18n="pickaxeLabel">⛏️ Кирка (1)</span></button>
+                <button id="btnDynamite" class="booster-btn" draggable="true" data-tool="dynamite"><span id="dynamiteLabel" data-i18n="dynamiteLabel">🧨 Динамит (2)</span></button>
             </div>
         </div>
 
@@ -44,29 +144,34 @@
             
             <div id="modalOverlay" class="modal-overlay hidden">
                 <div class="modal-card">
-                    <h2 id="modalTitle">Уровень Пройден!</h2>
-                    <p id="modalDesc">Отличная работа, артефакты найдены!</p>
+                    <div class="modal-icon-badge" id="modalIconBadge">🎉</div>
+                    <h2 id="modalTitle" data-i18n="modalWinTitle">Уровень Пройден!</h2>
+                    <p id="modalDesc" data-i18n="modalWinDesc">Отличная работа, артефакты найдены!</p>
                     <div class="modal-stats">
-                        <div>Счёт: <span id="modalScore">0</span></div>
+                        <span class="modal-stats-icon">⭐</span>
+                        <span id="modalScore">0</span>
                     </div>
-                    <button id="btnModalNext" class="modal-btn">Продолжить</button>
+                    <div class="modal-btn-row">
+                        <button id="btnModalMuseum" class="modal-icon-btn">🏛️</button>
+                        <button id="btnModalNext" class="modal-icon-btn modal-icon-btn-main">▶️</button>
+                        <button id="btnModalHome" class="modal-icon-btn">🏠</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="mapScreen" class="screen-view hidden">
+    <div id="mapScreen" class="screen-view">
         <div class="map-header">
-            <h2>🗺️ Карта уровней</h2>
-            <p>Проходи уровни по порядку и открывай новые!</p>
+            <h2 id="mapTitle" data-i18n="mapTitle">🗺️ Карта уровней</h2>
+            <p id="mapSubtitle" data-i18n="mapSubtitle">Проходи уровни по порядку и открывай новые!</p>
         </div>
         <div class="level-map" id="levelMap"></div>
     </div>
 
     <div id="museumScreen" class="screen-view hidden">
         <div class="museum-header">
-            <h2>🏛️ Главная Экспозиция</h2>
-            <p id="dinoTitle">Тираннозавр Рекс (T-Rex)</p>
+            <h2 id="museumHeaderTitle" data-i18n="museumHeaderTitle">🏛️ Главная Экспозиция</h2>
         </div>
 
         <div class="museum-stand">
@@ -76,11 +181,24 @@
         </div>
 
         <div id="boneInfoCard" class="bone-info-card hidden">
-            <h3 id="boneName">Название кости</h3>
-            <p id="boneDesc">Описание и факт о кости появятся здесь при клике на открытый фрагмент.</p>
+            <h3 id="boneName" data-i18n="boneNamePlaceholder">Название кости</h3>
+            <p id="boneDesc" data-i18n="boneDescPlaceholder">Описание и факт о кости появятся здесь при клике на открытый фрагмент.</p>
         </div>
     </div>
 
+    <nav class="bottom-nav">
+        <button id="btnNavMap" class="bottom-nav-btn active">
+            <span id="mapIconSlot" class="bottom-nav-icon icon-slot">🗺️</span>
+            <span class="bottom-nav-label" data-i18n="navMapShort">Карта</span>
+        </button>
+        <button id="btnNavMuseum" class="bottom-nav-btn">
+            <span id="museumIconSlot" class="bottom-nav-icon icon-slot">🏛️</span>
+            <span class="bottom-nav-label" data-i18n="navMuseumShort">Музей</span>
+        </button>
+    </nav>
+
+    <script src="src/platform-bridge.js"></script>
+    <script>window.Bridge = Bridge;</script>
     <script type="module" src="src/main.js"></script>
 </body>
 </html>

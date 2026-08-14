@@ -21,8 +21,12 @@ export class InputManager {
         const clientX = touch ? touch.clientX : e.clientX;
         const clientY = touch ? touch.clientY : e.clientY;
         
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
+        // Важно: масштабируем от ЛОГИЧЕСКОГО размера канваса (CONFIG.CANVAS_WIDTH/
+        // HEIGHT), а не от canvas.width/height напрямую — с учётом devicePixelRatio
+        // (см. Game.js) физический буфер канваса крупнее логических координат,
+        // в которых заданы OFFSET_X/TILE_SIZE и т.д.
+        const scaleX = CONFIG.CANVAS_WIDTH / rect.width;
+        const scaleY = CONFIG.CANVAS_HEIGHT / rect.height;
 
         return { 
             x: (clientX - rect.left) * scaleX, 
@@ -110,12 +114,25 @@ export class InputManager {
             }
         };
 
-        this.canvas.addEventListener('mousedown', onStart);
+        this.canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            onStart(e);
+        });
         // mouseup слушаем на window, а не на canvas: иначе быстрый свайп,
         // который заканчивается за пределами канваса, вообще не засчитывался.
         window.addEventListener('mouseup', onEnd);
-        this.canvas.addEventListener('touchstart', onStart, { passive: false });
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            onStart(e);
+        }, { passive: false });
         this.canvas.addEventListener('touchend', onEnd, { passive: false });
         this.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+        // Полностью блокируем нативное выделение текста, контекстное меню и drag
+        // на канвасе — на десктопе перетаскивание тайла иначе вызывало выделение
+        // поля или контекстное меню браузера.
+        this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+        this.canvas.addEventListener('selectstart', e => e.preventDefault());
+        this.canvas.addEventListener('dragstart', e => e.preventDefault());
     }
 }
