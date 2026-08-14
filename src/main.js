@@ -1,8 +1,21 @@
 import { Game } from './core/Game.js';
 import { Museum } from './core/Museum.js';
 import { LevelMap } from './core/LevelMap.js';
-import { setDinoLanguage } from './config.js';
+import { setDinoLanguage, ASSETS } from './config.js';
 import { t, getLang, setLang, onLangChange } from './i18n.js';
+import { createImgOrEmoji, loadImage } from './utils/AssetLoader.js';
+
+// ── Требования Yandex Games: без нативных контекстных меню, тултипов и
+// блокирующих браузерных диалогов (alert/confirm/prompt) ────────────────────
+// Тултипы по наведению (атрибут title) убраны из разметки — этого хватает,
+// т.к. мы нигде не проставляем title через JS. Контекстное меню/drag-иллюзия
+// картинок и блокирующие диалоги отключаем на уровне всего документа —
+// раньше это было запрещено только на канвасе.
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+window.alert = () => {};
+window.confirm = () => false;
+window.prompt = () => null;
 
 const canvas = document.getElementById('gameCanvas');
 const museum = new Museum();
@@ -64,14 +77,12 @@ window.addEventListener('switchTab', (e) => {
 });
 
 // ── Локализация ───────────────────────────────────────────────────────────
-// Все статические подписи помечены атрибутами data-i18n / data-i18n-title —
-// один общий проход по ним обновляет весь интерфейс сразу.
+// Все статические подписи помечены атрибутом data-i18n — один общий проход
+// по ним обновляет весь интерфейс сразу. Подписи по наведению (title) больше
+// нигде не используются (требование Yandex Games — без нативных тултипов).
 function applyStaticTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.dataset.i18n);
-    });
-    document.querySelectorAll('[data-i18n-title]').forEach(el => {
-        el.title = t(el.dataset.i18nTitle);
     });
 }
 
@@ -115,6 +126,69 @@ settingsOverlay?.addEventListener('click', (e) => {
 btnLangRu?.addEventListener('click', () => setLang('ru'));
 btnLangEn?.addEventListener('click', () => setLang('en'));
 
+// ── Пауза во время уровня ────────────────────────────────────────────────
+const btnPause = document.getElementById('btnPause');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const btnPauseResume = document.getElementById('btnPauseResume');
+const btnPauseMap = document.getElementById('btnPauseMap');
+const btnPauseMuseum = document.getElementById('btnPauseMuseum');
+const btnPauseRestart = document.getElementById('btnPauseRestart');
+const btnPauseGiveUp = document.getElementById('btnPauseGiveUp');
+
+function openPauseMenu() {
+    pauseOverlay?.classList.remove('hidden');
+    game.pause();
+}
+
+function closePauseMenu() {
+    pauseOverlay?.classList.add('hidden');
+    game.resume();
+}
+
+btnPause?.addEventListener('click', openPauseMenu);
+btnPauseResume?.addEventListener('click', closePauseMenu);
+pauseOverlay?.addEventListener('click', (e) => {
+    if (e.target === pauseOverlay) closePauseMenu();
+});
+
+// Каждое действие меню паузы, кроме "Продолжить", необратимо (прогресс
+// попытки уровня теряется) — поэтому сначала спрашиваем подтверждение своим
+// модальным окном (нативный confirm() запрещён требованиями Yandex Games).
+const pauseConfirmOverlay = document.getElementById('pauseConfirmOverlay');
+const btnPauseConfirmOk = document.getElementById('btnPauseConfirmOk');
+const btnPauseConfirmCancel = document.getElementById('btnPauseConfirmCancel');
+let pendingPauseAction = null;
+
+function askPauseConfirm(action) {
+    pendingPauseAction = action;
+    pauseOverlay?.classList.add('hidden');
+    pauseConfirmOverlay?.classList.remove('hidden');
+}
+
+function cancelPauseConfirm() {
+    pendingPauseAction = null;
+    pauseConfirmOverlay?.classList.add('hidden');
+    pauseOverlay?.classList.remove('hidden');
+}
+
+btnPauseConfirmCancel?.addEventListener('click', cancelPauseConfirm);
+pauseConfirmOverlay?.addEventListener('click', (e) => {
+    if (e.target === pauseConfirmOverlay) cancelPauseConfirm();
+});
+
+btnPauseConfirmOk?.addEventListener('click', () => {
+    const action = pendingPauseAction;
+    pendingPauseAction = null;
+    pauseConfirmOverlay?.classList.add('hidden');
+    game.resume();
+    action?.();
+});
+
+btnPauseMap?.addEventListener('click', () => askPauseConfirm(() => game.pauseMenuGoToMap()));
+btnPauseMuseum?.addEventListener('click', () => askPauseConfirm(() => game.pauseMenuGoToMuseum()));
+btnPauseRestart?.addEventListener('click', () => askPauseConfirm(() => game.pauseMenuRestart()));
+btnPauseGiveUp?.addEventListener('click', () => askPauseConfirm(() => game.pauseMenuGiveUp()));
+
 onLangChange(() => refreshLanguage());
 
 // Применяем язык сразу при загрузке (сохранённый выбор, либо язык окружения платформы,
@@ -122,6 +196,60 @@ onLangChange(() => refreshLanguage());
 setDinoLanguage(getLang());
 applyStaticTranslations();
 updateLangButtons();
+
+// ── Кастомные иконки интерфейса ──────────────────────────────────────────
+// Настройки/карта/музей — по умолчанию эмодзи; если положить файл по пути
+// из ASSETS.uiIcons, он подхватится автоматически (см. AssetLoader.js).
+function mountIcon(slotId, path, fallbackEmoji, extraClass) {
+    const slot = document.getElementById(slotId);
+    if (!slot) return;
+    const node = createImgOrEmoji(path, fallbackEmoji, extraClass || '');
+    slot.replaceChildren(node);
+}
+
+// Пауза — особый случай: заглушка по умолчанию нарисована на CSS (две
+// амбер-палочки), а не эмодзи ⏸️ (в большинстве шрифтов это цветной синий
+// квадрат, выбивающийся из круглой кнопки и цветовой схемы — см. скрин бага).
+// Поэтому здесь НЕ используем текстовый emoji-фолбэк: если своей картинки
+// нет или она не загрузилась — просто оставляем CSS-заглушку как есть.
+function mountCustomIcon(slotId, path) {
+    const slot = document.getElementById(slotId);
+    if (!slot || !path) return;
+    const probe = new Image();
+    probe.onload = () => {
+        const img = document.createElement('img');
+        img.src = path;
+        img.alt = '';
+        img.className = 'ui-icon-img pause-icon-img';
+        slot.replaceChildren(img);
+    };
+    probe.src = path;
+}
+
+mountCustomIcon('pauseIconSlot', ASSETS.uiIcons.pause);
+mountIcon('settingsIconSlot', ASSETS.uiIcons.settings, '⚙️', 'ui-icon-img settings-icon-img');
+mountIcon('mapIconSlot', ASSETS.uiIcons.map, '🗺️', 'ui-icon-img bottom-nav-icon-img');
+mountIcon('museumIconSlot', ASSETS.uiIcons.museum, '🏛️', 'ui-icon-img bottom-nav-icon-img');
+
+// ── Кастомный фон игры (необязательно) ───────────────────────────────────
+// Если ASSETS.background существует и грузится — показываем его поверх
+// обычного тёмного градиента body, но с плавным затуханием в этот же
+// градиент к низу экрана (там, где игровое поле и основной контент) — см.
+// .custom-bg-layer в style.css. Нет файла — просто ничего не меняется.
+(function initCustomBackground() {
+    const layer = document.getElementById('customBgLayer');
+    if (!layer || !ASSETS.background) return;
+    const entry = loadImage(ASSETS.background);
+    if (!entry) return;
+
+    const apply = () => {
+        layer.style.backgroundImage = `url('${ASSETS.background}')`;
+        layer.classList.add('loaded');
+    };
+
+    if (entry.loaded) apply();
+    else entry.img.addEventListener('load', apply, { once: true });
+})();
 
 // ── Yandex Games SDK (через platform-bridge.js, см. index.html) ──────────────
 // Bridge сам определяет платформу (Yandex / CrazyGames / Telegram / standalone)

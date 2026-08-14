@@ -8,6 +8,9 @@ html {
     margin: 0;
     padding: 0;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -29,6 +32,7 @@ body {
     align-items: center;
     min-height: 100vh;
     padding-top: 12px;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
 }
 
 #ui {
@@ -317,7 +321,7 @@ canvas {
     user-select: none;
 }
 
-#settingsOverlay {
+#settingsOverlay, #pauseOverlay {
     position: fixed;
     border-radius: 0;
     z-index: 200;
@@ -436,45 +440,316 @@ canvas {
 }
 
 .main-nav {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 100%;
-    justify-content: center;
-    background: #0b0704;
-    padding: 10px 0;
+    max-width: 548px;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 14px;
+    z-index: 200;
+    /* Сама полоса — невидимая и "прозрачная" для кликов (иначе перекрывала бы
+       контент под собой на всю ширину колонки), кликабельна только кнопка. */
+    pointer-events: none;
 }
 
-.nav-tab {
-    background: #1a110a;
+.main-nav > * {
+    pointer-events: auto;
+}
+
+/* ── Нижний бар навигации: Карта / Музей ──────────────────────────────
+   Тематическое оформление (кость + янтарные тона, как весь остальной UI),
+   активная вкладка "подсвечивается" и увеличивается. */
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 150;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(0deg, #0b0704 55%, rgba(11, 7, 4, 0.92) 100%);
+    border-top: 2px solid #3d2817;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.6);
+}
+
+.bottom-nav-btn {
+    position: relative;
+    flex: 1;
+    max-width: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 10px 7px;
+    background: linear-gradient(160deg, #2b1c10, #1a110a);
     color: #d4b28c;
     border: 2px solid #3d2817;
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: bold;
+    border-radius: 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-family: inherit;
+    transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.nav-tab:hover {
-    background: #2b1c10;
+.bottom-nav-btn:hover {
     border-color: #8c5e38;
 }
 
-.nav-tab.active {
-    background: #8c5e38;
-    color: #fff;
-    border-color: #e0a96d;
-    box-shadow: 0 0 10px rgba(224, 169, 109, 0.4);
+.bottom-nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: grayscale(0.4);
+    transform: none !important;
 }
 
-.nav-tab-settings {
-    padding: 10px 16px;
+.bottom-nav-icon {
+    font-size: 22px;
+    line-height: 1;
+    transition: transform 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+img.bottom-nav-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.bottom-nav-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+/* Активная вкладка: приподнимается, увеличивается и мягко светится золотом */
+.bottom-nav-btn.active {
+    background: linear-gradient(160deg, #8c5e38, #5c3a1b);
+    border-color: #ffd700;
+    color: #fff;
+    transform: translateY(-6px) scale(1.12);
+    box-shadow: 0 6px 18px rgba(255, 215, 0, 0.35), 0 0 0 1px rgba(255, 215, 0, 0.15) inset;
+}
+
+.bottom-nav-btn.active .bottom-nav-icon {
+    animation: bottomNavBounce 0.45s ease;
+}
+
+@keyframes bottomNavBounce {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35) rotate(-8deg); }
+    70%  { transform: scale(0.95) rotate(4deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ── Верхняя панель уровня: кнопка паузы ── */
+.game-topbar {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Кнопка паузы (в игре) и кнопка настроек (main-nav) — одна и та же круглая
+   иконка-кнопка, зеркально расположенная: пауза слева в своей панели, а
+   настройки справа в своей — см. .main-nav { justify-content: flex-end }. */
+.pause-btn {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 2px solid #543922;
+    background: linear-gradient(160deg, #2b1c10, #1a110a);
+    color: #e0a96d;
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.pause-btn:hover {
+    border-color: #e0a96d;
+    background: #3d2817;
+    transform: scale(1.06);
+}
+
+.icon-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Заглушка иконки паузы по умолчанию — две амбер-палочки в тон интерфейсу,
+   а не эмодзи ⏸️ (в большинстве шрифтов рисуется цветным синим квадратом,
+   который не вписывается в круглую кнопку и выбивается из цветовой схемы).
+   Если положить свой файл по ASSETS.uiIcons.pause — эта заглушка заменится
+   на картинку (см. mountCustomIcon в main.js), а не наоборот. */
+.pause-icon-fallback {
+    gap: 4px;
+}
+
+.pause-fallback-bar {
+    width: 3px;
+    height: 13px;
+    border-radius: 1.5px;
+    background: #e0a96d;
+}
+
+img.ui-icon-img {
+    object-fit: contain;
+}
+
+img.pause-icon-img,
+img.settings-icon-img {
+    width: 20px;
+    height: 20px;
+}
+
+/* ── Меню паузы ── */
+.pause-card {
+    width: 300px;
+}
+
+.pause-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pause-menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #2b1c10;
+    color: #d4b28c;
+    border: 2px solid #543922;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease, background 0.15s ease;
+}
+
+/* По требованию: увеличение по наведению/нажатию, без сдвига в сторону */
+.pause-menu-btn:hover {
+    border-color: #8c5e38;
+    background: #3d2817;
+    transform: scale(1.045);
+}
+
+.pause-menu-btn:active {
+    transform: scale(1.09);
+}
+
+.pause-menu-icon {
     font-size: 18px;
+}
+
+.pause-menu-btn-main {
+    background: linear-gradient(135deg, #ffd700, #e0a96d);
+    color: #2b1c10;
+    border-color: #ffd700;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.35);
+}
+
+.pause-menu-btn-main:hover {
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.55);
+}
+
+.pause-menu-btn-danger {
+    border-color: #a13a3a;
+    color: #ff9a9a;
+}
+
+.pause-menu-btn-danger:hover {
+    background: #3d1c1c;
+    border-color: #e05a5a;
+}
+
+/* ── Подтверждение действия в меню паузы (своя модалка вместо confirm()) ── */
+.pause-confirm-card {
+    width: 300px;
+    text-align: center;
+}
+
+.pause-confirm-card p {
+    color: #c9b190;
+    font-size: 14px;
+    margin: 6px 0 18px;
+}
+
+.pause-confirm-btn {
+    flex: 1;
+    padding: 12px 10px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid #543922;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease, background 0.15s ease;
+}
+
+.pause-confirm-btn:hover { transform: scale(1.045); }
+.pause-confirm-btn:active { transform: scale(1.09); }
+
+.pause-confirm-btn-cancel {
+    background: #2b1c10;
+    color: #d4b28c;
+}
+
+.pause-confirm-btn-cancel:hover {
+    border-color: #8c5e38;
+    background: #3d2817;
+}
+
+.pause-confirm-btn-ok {
+    background: linear-gradient(135deg, #e05a5a, #a13a3a);
+    color: #fff;
+    border-color: #e05a5a;
+}
+
+.pause-confirm-btn-ok:hover {
+    box-shadow: 0 6px 18px rgba(224, 90, 90, 0.45);
+}
+
+/* ── Необязательный кастомный фон игры ──────────────────────────────────
+   Если ASSETS.background успешно загрузился (см. main.js), поверх обычного
+   тёмного градиента body показывается картинка, но затухающая в этот же
+   тон книзу экрана — там, где игровое поле и основной контент остаются
+   нетронутыми. Пока картинки нет — слой невидим (opacity: 0), ничего не
+   меняется по сравнению с обычным фоном body. */
+.custom-bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.custom-bg-layer.loaded {
+    opacity: 1;
+}
+
+.custom-bg-layer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, transparent 22%, #0b0704 68%, #0b0704 100%);
 }
 
 .settings-card {
@@ -521,22 +796,11 @@ canvas {
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
-.nav-tab:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    filter: grayscale(0.4);
-}
-
-.nav-tab:disabled:hover {
-    background: #1a110a;
-    border-color: #3d2817;
-}
-
 #museumScreen {
     width: 100%;
     max-width: 100%;
     gap: 16px;
-    padding: 0 20px;
+    padding: 56px 20px 0;
 }
 
 .museum-header {
@@ -557,6 +821,8 @@ canvas {
 
 .museum-stand {
     width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
     background: #140d07;
     border: 3px solid #3d2817;
     border-radius: 12px;
@@ -926,22 +1192,30 @@ canvas {
     white-space: nowrap;
 }
 
-/* ── Слоты костей ── */
+/* ── Слоты костей ──────────────────────────────────────────────────────
+   Раньше было жёстко repeat(5, 1fr): на узких экранах контент слота (эмодзи
+   + подпись #N) не давал колонке сжаться меньше своего "минимального"
+   размера, и 5-я/10-я кость вылезали за экран. Теперь колонки сами решают,
+   сколько их поместится в ряд (auto-fit) в пределах разумного диапазона
+   размера (minmax) — на узком экране ряд станет короче (3-4 в ряд) и
+   лишнее аккуратно переносится на следующую строку, а не обрезается. */
 .bones-slots-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
     gap: 10px;
     margin-top: 8px;
 }
 
 .bone-icon {
-    font-size: 28px;
+    font-size: clamp(26px, 8vw, 42px);
     display: block;
 }
 
 img.bone-icon {
-    width: 32px;
-    height: 32px;
+    width: 60%;
+    height: 60%;
+    max-width: 56px;
+    max-height: 56px;
     object-fit: contain;
 }
 
@@ -1042,7 +1316,7 @@ img.bone-icon {
 #mapScreen {
     width: 100%;
     max-width: 100%;
-    padding: 0 20px;
+    padding: 56px 20px 0;
 }
 
 .map-header {
@@ -1117,6 +1391,15 @@ img.bone-icon {
 .level-node .level-node-icon {
     font-size: 22px;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+img.level-node-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 }
 
 .level-node .level-node-num {
@@ -1151,13 +1434,16 @@ img.bone-icon {
     50% { box-shadow: 0 0 22px rgba(255, 215, 0, 0.8); }
 }
 
+/* ── На широких экранах (ПК) слоты костей заметно крупнее, но иконка внутри
+   раньше оставалась мелкой фиксированного размера — увеличиваем её тоже. ── */
+@media (min-width: 600px) {
+    .bone-icon { font-size: 52px; }
+    img.bone-icon { max-width: 72px; max-height: 72px; }
+}
+
 /* ── Адаптив для узких экранов: не даём элементам наезжать друг на друга ── */
 @media (max-width: 420px) {
     body { padding-top: 8px; }
-
-    h1 { font-size: 19px; }
-
-    .nav-tab { padding: 8px 16px; font-size: 13px; }
 
     .museum-bar { font-size: 11px; padding: 5px 10px; }
     .progress-bg { width: 70px; }
@@ -1176,4 +1462,15 @@ img.bone-icon {
     .modal-icon-btn { width: 44px; height: 44px; font-size: 18px; }
     .modal-icon-btn-main { width: 54px; height: 54px; font-size: 22px; }
     .modal-btn-row { gap: 10px; }
+
+    .bottom-nav-btn { padding: 6px 6px 5px; border-radius: 13px; }
+    .bottom-nav-icon { font-size: 19px; }
+    .bottom-nav-label { font-size: 10px; }
+    .pause-btn { width: 34px; height: 34px; font-size: 15px; }
+
+    #museumScreen { padding: 56px 12px 0; }
+    .museum-stand { padding: 12px; }
+    .bones-slots-grid { grid-template-columns: repeat(auto-fit, minmax(56px, 1fr)); gap: 8px; }
+
+    .pause-card, .pause-confirm-card, .settings-card { width: 90vw; max-width: 300px; }
 }

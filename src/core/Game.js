@@ -23,10 +23,23 @@ const PROGRESS_STORAGE_KEY = 'dino_dig_progress_v1';
 export class Game {
     constructor(canvas, museum = null) {
         this.canvas = canvas;
-        this.canvas.width = CONFIG.CANVAS_WIDTH;
-        this.canvas.height = CONFIG.CANVAS_HEIGHT;
+
+        // На экранах с высокой плотностью пикселей (Retina и т.п.) canvas раньше
+        // рисовался в "логическом" разрешении (CONFIG.CANVAS_WIDTH/HEIGHT), а
+        // браузер растягивал готовую картинку под физические пиксели экрана —
+        // из-за этого загруженные спрайты выглядели размытыми, хотя сам файл был
+        // в хорошем качестве. Теперь буфер канваса создаётся в физических
+        // пикселях (умножаем на devicePixelRatio), а весь остальной код продолжает
+        // рисовать в тех же логических координатах благодаря ctx.scale(dpr, dpr) —
+        // CSS-размер канваса (и раскладка на странице) при этом не меняется.
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        this.canvas.width = CONFIG.CANVAS_WIDTH * dpr;
+        this.canvas.height = CONFIG.CANVAS_HEIGHT * dpr;
 
         this.ctx = canvas.getContext('2d');
+        this.ctx.scale(dpr, dpr);
+        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingQuality = 'high';
         this.museum = museum;
         this.levelMap = null;
         this.grid = new Grid();
@@ -275,11 +288,23 @@ export class Game {
             this.loadNextLevel();
         };
 
-        bridge.showInterstitial({
+        // showInterstitial() возвращает false, когда платформа не поддерживает рекламу
+        // (например: standalone-режим вне Yandex/CrazyGames, либо ysdk.adv недоступен).
+        // В этом случае ни один из колбэков (onClose/onError/onOffline) никогда не
+        // вызовется, а window.Bridge при этом всегда truthy — раньше это приводило к
+        // тому, что каждый 4-й уровень (после 3 подряд) молча "зависал": grid и цель
+        // от старого уровня оставались на экране, а любое совпадение сразу засчитывало
+        // победу, потому что goalProgress уже был >= goalTarget с прошлого уровня.
+        // Поэтому если реклама не была фактически запрошена — переходим дальше сами.
+        const adRequested = bridge.showInterstitial({
             onClose: resumeAndAdvance,
             onError: resumeAndAdvance,
             onOffline: resumeAndAdvance
         });
+
+        if (!adRequested) {
+            resumeAndAdvance();
+        }
     }
 
     _updateBoosterUI() {
@@ -421,6 +446,39 @@ export class Game {
         spawnBoneFly(this.ui.boneFlyLayer, this.ui.btnNavMuseum, count);
     }
 
+    // ─── Меню паузы ──────────────────────────────────────────────────
+    // Прогресс текущего захода на уровень (ходы, сетка) нигде не сохраняется —
+    // при возврате на уровень он всё равно пересоздаётся заново (см. loadLevel).
+    // Поэтому любой выход из незавершённого уровня трактуем как отказ от
+    // попытки: кости, найденные за неё, откатываем обратно в музей (как при
+    // поражении), а сам уровень пересоздаём "с нуля" на будущее.
+    _forfeitCurrentAttempt() {
+        if (this.museum && this.unlockedThisLevel.length > 0) {
+            this.museum.removeBones(this.unlockedThisLevel);
+            this.unlockedThisLevel = [];
+        }
+        this.loadLevelByNumber(this.levelNumber);
+    }
+
+    pauseMenuRestart() {
+        this._forfeitCurrentAttempt();
+    }
+
+    pauseMenuGiveUp() {
+        this._forfeitCurrentAttempt();
+        window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
+    }
+
+    pauseMenuGoToMap() {
+        this._forfeitCurrentAttempt();
+        window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
+    }
+
+    pauseMenuGoToMuseum() {
+        this._forfeitCurrentAttempt();
+        window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));
+    }
+
     updateUI() {
         if (this.ui.score) this.ui.score.textContent = this.score;
         if (this.ui.moves) this.ui.moves.textContent = this.moves;
@@ -504,6 +562,15 @@ export class Game {
             }
         } else {
             this.state = STATE.GAMEOVER;
+
+            // Кости засчитываются в музей насовсем только при победе — при поражении
+            // всё, что успели найти за эту попытку, откатываем обратно.
+            if (this.museum && this.unlockedThisLevel.length > 0) {
+                this.museum.removeBones(this.unlockedThisLevel);
+                this.unlockedThisLevel = [];
+                this.updateUI();
+            }
+
             if (this.ui.modalIconBadge) this.ui.modalIconBadge.textContent = '⛔';
             this.ui.modalTitle.textContent = t('modalLoseTitle');
             this.ui.modalDesc.textContent = t('modalLoseDesc');

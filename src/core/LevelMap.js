@@ -1,4 +1,5 @@
-import { t } from '../i18n.js';
+import { ASSETS } from '../config.js';
+import { createImgOrEmoji } from '../utils/AssetLoader.js';
 
 const TYPE_ICON = { 1: '⛏️', 2: '📦', 3: '🦴' };
 export const LEVEL_SEQUENCE = [1, 3, 2];
@@ -35,17 +36,27 @@ export class LevelMap {
             const isCurrent = n === this.highestLevelReached;
             const isLocked = n > this.highestLevelReached;
 
-            const typeLabel = { 1: t('levelTypeDig'), 2: t('levelTypeCrates'), 3: t('levelTypeDrop') }[type];
             const node = document.createElement('button');
             node.className = `level-node${isDone ? ' done' : ''}${isCurrent ? ' current' : ''}${isLocked ? ' locked' : ''}`;
             node.style.setProperty('--offset', `${Math.sin(n * 0.85) * 72}px`);
             node.disabled = isLocked;
-            node.title = t('levelNodeTooltip', typeLabel, n);
 
             node.innerHTML = `
-                <span class="level-node-icon">${isDone ? '✅' : (isLocked ? '🔒' : TYPE_ICON[type])}</span>
+                <span class="level-node-icon"></span>
                 <span class="level-node-num">${n}</span>
             `;
+
+            // Готовое (✅) и запертый (🔒) — всегда эмодзи-статус. Свой спрайт
+            // можно подставить только для иконки ТИПА уровня (кирка/ящик/кость),
+            // см. ASSETS.levelTypeIcon в config.js — если файла нет, эмодзи-заглушка.
+            const iconSlot = node.querySelector('.level-node-icon');
+            if (isDone) {
+                iconSlot.textContent = '✅';
+            } else if (isLocked) {
+                iconSlot.textContent = '🔒';
+            } else {
+                iconSlot.appendChild(createImgOrEmoji(ASSETS.levelTypeIcon(type), TYPE_ICON[type], 'level-node-icon-img'));
+            }
 
             if (!isLocked) {
                 node.addEventListener('click', () => this.onSelectLevel(n));

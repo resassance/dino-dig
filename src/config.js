@@ -50,8 +50,49 @@ export const ASSETS = {
     boneIcon: (boneId) => `assets/bones/${boneId}.png`,
     // Картинки динозавра в музее: собранный скелет / живой динозавр
     dinoSkeleton: (dinoId) => `assets/dinos/${dinoId}-skeleton.png`,
-    dinoAlive: (dinoId) => `assets/dinos/${dinoId}-alive.png`
+    dinoAlive: (dinoId) => `assets/dinos/${dinoId}-alive.png`,
+
+    // Иконки интерфейса. Каждая — необязательна: нет файла — рисуется эмодзи-
+    // заглушка (см. createImgOrEmoji), их же значения указаны в скобках.
+    uiIcons: {
+        pause: 'assets/ui/pause.png',       // содержимое кнопки паузы (⏸️)
+        settings: 'assets/ui/settings.png', // содержимое кнопки настроек (⚙️)
+        map: 'assets/ui/map.png',           // иконка вкладки "Карта" (🗺️)
+        museum: 'assets/ui/museum.png'      // иконка вкладки "Музей" (🏛️)
+    },
+    // Иконка типа уровня на карте уровней, по типу (1 = раскопки, 2 = ящики,
+    // 3 = спуск костей) — см. LevelMap.js. Нет файла — эмодзи-заглушка.
+    levelTypeIcon: (type) => `assets/ui/level_type_${type}.png`,
+
+    // Необязательный фон игры (см. body/.custom-bg-layer в style.css). Если
+    // файла нет — остаётся текущий тёмный градиент/текстура, как и раньше.
+    background: 'assets/ui/background.jpg'
 };
+
+// ── Единый "скелет" фрагментов костей ──────────────────────────────────
+// Раньше у каждого динозавра были свои названия костей (например, у T-Rex —
+// "Левая передняя лапа", у Стегозавра — "Костная пластина"), из-за чего кости
+// с одинаковым номером у разных динозавров назывались и выглядели по-разному.
+// Теперь названия и иконки фрагментов унифицированы по позиции (1..10) для
+// ВСЕХ динозавров — так же, как они были у Велоцираптора: X-5 у любого
+// динозавра — это всегда "Грудная клетка" и т.д. Уникальными остаются только
+// факты (bone.fact) — интересные особенности конкретного вида.
+const BONE_NAME_TEMPLATE = {
+    ru: ['Череп', 'Глазницы', 'Шейные позвонки', 'Передние лапы', 'Грудная клетка', 'Позвоночник', 'Таз', 'Задние лапы', 'Коготь', 'Хвост'],
+    en: ['Skull', 'Eye sockets', 'Neck vertebrae', 'Forelimbs', 'Rib cage', 'Spine', 'Pelvis', 'Hind legs', 'Claw', 'Tail']
+};
+const BONE_ICON_TEMPLATE = ['💀', '👁️', '🦴', '🦾', '🫁', '🦴', '🦴', '🦵', '⚔️', '🐊'];
+
+// Собирает массив из 10 фрагментов кости для динозавра dinoId: id/name/icon —
+// по единому шаблону выше, fact — уникальный текст для каждой позиции.
+function buildBones(dinoId, facts) {
+    return facts.map((fact, i) => ({
+        id: `${dinoId}-${i + 1}`,
+        name: BONE_NAME_TEMPLATE.ru[i],
+        icon: BONE_ICON_TEMPLATE[i],
+        fact
+    }));
+}
 
 export const DINO_DATA = {
     // ID динозавра соответствует типу тайла в игре (0-5)
@@ -65,18 +106,18 @@ export const DINO_DATA = {
         period: 'Поздний меловой (68-66 млн лет назад)',
         length: '12 м',
         weight: '8 тонн',
-        bones: [
-            { id: '0-1', name: 'Череп', icon: '💀', fact: 'Сила укуса T-Rex достигала 6 тонн — он мог с легкостью раздавить автомобиль!' },
-            { id: '0-2', name: 'Шейный позвонок', icon: '🦴', fact: 'Шея тираннозавра была короткой и мускулистой, чтобы удерживать тяжелую голову.' },
-            { id: '0-3', name: 'Грудная клетка', icon: '🫁', fact: 'Ребра защищали жизненно важные органы и поддерживали гигантскую массу тела.' },
-            { id: '0-4', name: 'Позвоночник', icon: '🦴', fact: 'Позвоночник состоял из прочных позвонков с воздушными камерами для снижения веса.' },
-            { id: '0-5', name: 'Тазовые кости', icon: '🦴', fact: 'Широкий таз служил креплением для мощных мышц задних лап.' },
-            { id: '0-6', name: 'Левая передняя лапа', icon: '🦾', fact: 'Передние лапы были длиной всего около 1 метра, но могли поднимать вес до 200 кг!' },
-            { id: '0-7', name: 'Правая передняя лапа', icon: '🦾', fact: 'Двупалые лапы использовались для удержания добычи или подъема с земли.' },
-            { id: '0-8', name: 'Левая задняя лапа', icon: '🦵', fact: 'Бедренная кость была огромной, позволяя развивать скорость до 20-25 км/ч.' },
-            { id: '0-9', name: 'Правая задняя лапа', icon: '🦵', fact: 'Стопа с тремя опорными пальцами отлично распределяла многотонный вес.' },
-            { id: '0-10', name: 'Хвост', icon: '🐊', fact: 'Длинный и тяжелый хвост служил противовесом для массивной головы при ходьбе.' }
-        ]
+        bones: buildBones(0, [
+            'Сила укуса T-Rex достигала 6 тонн — он мог с легкостью раздавить автомобиль!',
+            'Шея тираннозавра была короткой и мускулистой, чтобы удерживать тяжелую голову.',
+            'Ребра защищали жизненно важные органы и поддерживали гигантскую массу тела.',
+            'Передние лапы были длиной всего около 1 метра, но могли поднимать вес до 200 кг!',
+            'Позвоночник состоял из прочных позвонков с воздушными камерами для снижения веса.',
+            'Двупалые лапы использовались для удержания добычи или подъема с земли.',
+            'Широкий таз служил креплением для мощных мышц задних лап.',
+            'Бедренная кость была огромной, позволяя развивать скорость до 20-25 км/ч.',
+            'Стопа с тремя опорными пальцами отлично распределяла многотонный вес.',
+            'Длинный и тяжелый хвост служил противовесом для массивной головы при ходьбе.'
+        ])
     },
     1: {
         id: 1,
@@ -88,18 +129,18 @@ export const DINO_DATA = {
         period: 'Поздний юрский (155-150 млн лет назад)',
         length: '9 м',
         weight: '3 тонны',
-        bones: [
-            { id: '1-1', name: 'Череп', icon: '💀', fact: 'Мозг стегозавра был размером с грецкий орех — один из самых маленьких среди динозавров!' },
-            { id: '1-2', name: 'Шейные позвонки', icon: '🦴', fact: 'Шея была короткой и состояла из 10 позвонков.' },
-            { id: '1-3', name: 'Спинные позвонки', icon: '🦴', fact: 'Кости позвоночника имели специальные выросты для крепления пластин.' },
-            { id: '1-4', name: 'Костная пластина', icon: '🛡️', fact: 'Пластины на спине могли менять цвет для привлечения партнёров или отпугивания врагов!' },
-            { id: '1-5', name: 'Хвостовые позвонки', icon: '🦴', fact: 'К хвосту крепились 4 острых шипа — грозное оружие против хищников.' },
-            { id: '1-6', name: 'Шипы хвоста', icon: '⚔️', fact: 'Каждый шип достигал 60-90 см в длину!' },
-            { id: '1-7', name: 'Тазовые кости', icon: '🦴', fact: 'Массивный таз помогал выдерживать вес тяжёлых пластин.' },
-            { id: '1-8', name: 'Левая задняя нога', icon: '🦵', fact: 'Ноги были короткими, но мощными для поддержания огромного тела.' },
-            { id: '1-9', name: 'Правая задняя нога', icon: '🦵', fact: 'Толщина бедренной кости достигала 30 см!' },
-            { id: '1-10', name: 'Броневая спина', icon: '🛡️', fact: 'Пластины были пронизаны кровеносными сосудами для терморегуляции!' }
-        ]
+        bones: buildBones(1, [
+            'Мозг стегозавра был размером с грецкий орех — один из самых маленьких среди динозавров!',
+            'Шея была короткой и состояла из 10 позвонков.',
+            'Кости позвоночника имели специальные выросты для крепления пластин.',
+            'Пластины на спине могли менять цвет для привлечения партнёров или отпугивания врагов!',
+            'К хвосту крепились 4 острых шипа — грозное оружие против хищников.',
+            'Каждый шип достигал 60-90 см в длину!',
+            'Массивный таз помогал выдерживать вес тяжёлых пластин.',
+            'Ноги были короткими, но мощными для поддержания огромного тела.',
+            'Толщина бедренной кости достигала 30 см!',
+            'Пластины были пронизаны кровеносными сосудами для терморегуляции!'
+        ])
     },
     2: {
         id: 2,
@@ -111,18 +152,18 @@ export const DINO_DATA = {
         period: 'Поздний юрский (154-153 млн лет назад)',
         length: '22 м',
         weight: '56 тонн',
-        bones: [
-            { id: '2-1', name: 'Череп', icon: '💀', fact: 'Ноздри брахиозавра располагались на вершине головы, как у современных китов!' },
-            { id: '2-2', name: 'Шея', icon: '🦴', fact: 'Шея достигала 9 метров — как трехэтажный дом! Она состояла из 15-17 позвонков.' },
-            { id: '2-3', name: 'Позвоночник', icon: '🦴', fact: 'Позвонки были полыми с воздушными мешками, как у птиц — для снижения веса.' },
-            { id: '2-4', name: 'Лёгкие', icon: '🫁', fact: 'Лёгкие брахиозавра были размером с небольшой автомобиль!' },
-            { id: '2-5', name: 'Передние конечности', icon: '🦾', fact: 'Передние ноги были длиннее задних, из-за чего спина наклонялась вперёд.' },
-            { id: '2-6', name: 'Задние конечности', icon: '🦵', fact: 'Бедренная кость длиной 2 метра — самая длинная из всех известных костей!' },
-            { id: '2-7', name: 'Таз', icon: '🦴', fact: 'Тазовый пояс был невероятно мощным, чтобы выдерживать огромный вес.' },
-            { id: '2-8', name: 'Рёбра', icon: '🦴', fact: 'Рёбра образовывали клетку длиной 3 метра для защиты органов.' },
-            { id: '2-9', name: 'Хвост', icon: '🐊', fact: 'Хвост был относительно коротким и служил противовесом длинной шее.' },
-            { id: '2-10', name: 'Плечевой пояс', icon: '🦴', fact: 'Мощные плечевые кости крепили массивные передние ноги к телу.' }
-        ]
+        bones: buildBones(2, [
+            'Ноздри брахиозавра располагались на вершине головы, как у современных китов!',
+            'Шея достигала 9 метров — как трехэтажный дом! Она состояла из 15-17 позвонков.',
+            'Позвонки были полыми с воздушными мешками, как у птиц — для снижения веса.',
+            'Передние ноги были длиннее задних, из-за чего спина наклонялась вперёд.',
+            'Рёбра образовывали клетку длиной 3 метра для защиты органов.',
+            'Бедренная кость длиной 2 метра — самая длинная из всех известных костей!',
+            'Тазовый пояс был невероятно мощным, чтобы выдерживать огромный вес.',
+            'Лёгкие брахиозавра были размером с небольшой автомобиль!',
+            'Мощные плечевые кости крепили массивные передние ноги к телу.',
+            'Хвост был относительно коротким и служил противовесом длинной шее.'
+        ])
     },
     3: {
         id: 3,
@@ -134,18 +175,18 @@ export const DINO_DATA = {
         period: 'Поздний меловой (75-71 млн лет назад)',
         length: '2 м',
         weight: '15 кг',
-        bones: [
-            { id: '3-1', name: 'Череп', icon: '💀', fact: 'Череп был длиной около 25 см с 80 острыми зубами!' },
-            { id: '3-2', name: 'Глазницы', icon: '👁️', fact: 'Глаза были направлены вперёд, обеспечивая бинокулярное зрение для охоты.' },
-            { id: '3-3', name: 'Шейные позвонки', icon: '🦴', fact: 'Шея была гибкой и S-образной, как у птиц.' },
-            { id: '3-4', name: 'Передние лапы', icon: '🦾', fact: 'Три пальца с острыми когтями на каждой руке — отличные хватательные органы!' },
-            { id: '3-5', name: 'Грудная клетка', icon: '🫁', fact: 'Как у птиц, имела киль для крепления мощных летательных мышц.' },
-            { id: '3-6', name: 'Позвоночник', icon: '🦴', fact: 'Гибкий хребет позволял совершать быстрые манёвры при охоте.' },
-            { id: '3-7', name: 'Таз', icon: '🦴', fact: 'Таз был лёгким, как у птиц — облегчал передвижение на большие расстояния.' },
-            { id: '3-8', name: 'Задние ноги', icon: '🦵', fact: 'Длинные ноги позволяли развивать скорость до 60 км/ч!' },
-            { id: '3-9', name: 'Серповидный коготь', icon: '⚔️', fact: 'Знаменитый 6.5-сантиметровый коготь на задней ноге использовался для нанесения смертельных ран!' },
-            { id: '3-10', name: 'Хвост', icon: '🐊', fact: 'Длинный хвост служил балансиром при беге и резких поворотах.' }
-        ]
+        bones: buildBones(3, [
+            'Череп был длиной около 25 см с 80 острыми зубами!',
+            'Глаза были направлены вперёд, обеспечивая бинокулярное зрение для охоты.',
+            'Шея была гибкой и S-образной, как у птиц.',
+            'Три пальца с острыми когтями на каждой руке — отличные хватательные органы!',
+            'Как у птиц, имела киль для крепления мощных летательных мышц.',
+            'Гибкий хребет позволял совершать быстрые манёвры при охоте.',
+            'Таз был лёгким, как у птиц — облегчал передвижение на большие расстояния.',
+            'Длинные ноги позволяли развивать скорость до 60 км/ч!',
+            'Знаменитый 6.5-сантиметровый коготь на задней ноге использовался для нанесения смертельных ран!',
+            'Длинный хвост служил балансиром при беге и резких поворотах.'
+        ])
     },
     4: {
         id: 4,
@@ -157,18 +198,18 @@ export const DINO_DATA = {
         period: 'Поздний меловой (68-66 млн лет назад)',
         length: '9 м',
         weight: '6 тонн',
-        bones: [
-            { id: '4-1', name: 'Череп с воротником', icon: '💀', fact: 'Череп трицератопса достигал 2 метров — почти треть длины всего тела!' },
-            { id: '4-2', name: 'Носовой рог', icon: '🦄', fact: 'Носовой рог длиной около 30 см защищал морду от хищников.' },
-            { id: '4-3', name: 'Глазные рога', icon: '🦄', fact: 'Два рога над глазами достигали 1 метра и служили грозным оружием!' },
-            { id: '4-4', name: 'Костный воротник', icon: '🛡️', fact: 'Воротник защищал шею и служил для привлечения партнёров — мог быть ярким!' },
-            { id: '4-5', name: 'Шейные позвонки', icon: '🦴', fact: 'Шея была мускулистой и короткой, чтобы выдерживать вес огромного воротника.' },
-            { id: '4-6', name: 'Позвоночник', icon: '🦴', fact: 'Прочный позвоночник поддерживал тяжёлую голову с воротником.' },
-            { id: '4-7', name: 'Передние ноги', icon: '🦵', fact: 'Передние ноги были короче задних, как у носорога.' },
-            { id: '4-8', name: 'Задние ноги', icon: '🦵', fact: 'Мощные задние ноги позволяли быстро бегать от хищников!' },
-            { id: '4-9', name: 'Таз', icon: '🦴', fact: 'Массивный таз крепил мощные ноги к телу.' },
-            { id: '4-10', name: 'Костяк черепа', icon: '🦴', fact: 'Воротник был пронизан сосудами и мог менять цвет при кровообращении!' }
-        ]
+        bones: buildBones(4, [
+            'Череп трицератопса достигал 2 метров — почти треть длины всего тела!',
+            'Два рога над глазами достигали 1 метра и служили грозным оружием!',
+            'Шея была мускулистой и короткой, чтобы выдерживать вес огромного воротника.',
+            'Передние ноги были короче задних, как у носорога.',
+            'Костный воротник защищал шею и служил для привлечения партнёров — мог быть ярким!',
+            'Прочный позвоночник поддерживал тяжёлую голову с воротником.',
+            'Массивный таз крепил мощные ноги к телу.',
+            'Мощные задние ноги позволяли быстро бегать от хищников!',
+            'Носовой рог длиной около 30 см защищал морду от хищников.',
+            'Воротник был пронизан сосудами и мог менять цвет при кровообращении!'
+        ])
     },
     5: {
         id: 5,
@@ -180,25 +221,27 @@ export const DINO_DATA = {
         period: 'Поздний юрский (150-148 млн лет назад)',
         length: '1 м (размах крыльев 1.5 м)',
         weight: '2.5 кг',
-        bones: [
-            { id: '5-1', name: 'Череп', icon: '💀', fact: 'Череп с длинным клювом и острыми зубами — идеален для ловли рыбы!' },
-            { id: '5-2', name: 'Глазницы', icon: '👁️', fact: 'Большие глаза указывают на отличное зрение — важно для охоты в воздухе.' },
-            { id: '5-3', name: 'Шейные позвонки', icon: '🦴', fact: 'Гибкая S-образная шея позволяла маневрировать при полёте.' },
-            { id: '5-4', name: 'Крыловая кость', icon: '🦴', fact: 'Основная кость крыла — плечевая — была полой для снижения веса.' },
-            { id: '5-5', name: 'Пальцы крыльев', icon: '🦴', fact: 'Четвёртый палец был невероятно длинным и поддерживал крыло!' },
-            { id: '5-6', name: 'Крыловая перепонка', icon: '🦇', fact: 'Кожаная перепонка между телом и крыльями могла быть до 25 см!' },
-            { id: '5-7', name: 'Грудина', icon: '🛡️', fact: 'Киль на грудине крепил мощные мышцы для машущего полёта.' },
-            { id: '5-8', name: 'Позвоночник', icon: '🦴', fact: 'Лёгкий позвоночник с воздушными мешками — как у птиц!' },
-            { id: '5-9', name: 'Тазовые кости', icon: '🦴', fact: 'Таз был маленьким — тело было адаптировано для полёта.' },
-            { id: '5-10', name: 'Задние конечности', icon: '🦵', fact: 'Ноги были короткими, но помогали при взлёте и посадке.' }
-        ]
+        bones: buildBones(5, [
+            'Череп с длинным клювом и острыми зубами — идеален для ловли рыбы!',
+            'Большие глаза указывают на отличное зрение — важно для охоты в воздухе.',
+            'Гибкая S-образная шея позволяла маневрировать при полёте.',
+            'Основная кость крыла — плечевая — была полой для снижения веса.',
+            'Киль на грудине крепил мощные мышцы для машущего полёта.',
+            'Лёгкий позвоночник с воздушными мешками — как у птиц!',
+            'Таз был маленьким — тело было адаптировано для полёта.',
+            'Ноги были короткими, но помогали при взлёте и посадке.',
+            'Четвёртый палец был невероятно длинным и поддерживал крыло!',
+            'Кожаная перепонка между телом и крыльями могла быть до 25 см!'
+        ])
     }
 };
 
 // ── Локализация текстов динозавров ───────────────────────────────────
 // DINO_DATA хранит "текущий язык" и мутируется на месте через setDinoLanguage(),
 // поэтому все модули, однажды импортировавшие DINO_DATA, всегда видят актуальный текст.
-function snapshotDinoText(source) {
+// Названия/иконки фрагментов костей больше НЕ хранятся по языкам отдельно —
+// они всегда берутся из BONE_NAME_TEMPLATE по позиции (см. buildBones выше).
+function snapshotDinoFacts(source) {
     const snap = {};
     Object.keys(source).forEach(id => {
         const d = source[id];
@@ -208,13 +251,13 @@ function snapshotDinoText(source) {
             period: d.period,
             length: d.length,
             weight: d.weight,
-            bones: d.bones.map(b => ({ id: b.id, name: b.name, fact: b.fact }))
+            bones: d.bones.map(b => ({ id: b.id, fact: b.fact }))
         };
     });
     return snap;
 }
 
-const DINO_TEXT_RU = snapshotDinoText(DINO_DATA);
+const DINO_TEXT_RU = snapshotDinoFacts(DINO_DATA);
 
 const DINO_TEXT_EN = {
     0: {
@@ -224,16 +267,16 @@ const DINO_TEXT_EN = {
         length: '12 m',
         weight: '8 tons',
         bones: [
-            { id: '0-1', name: 'Skull', fact: 'T-Rex\u2019s bite force reached 6 tons \u2014 strong enough to crush a car!' },
-            { id: '0-2', name: 'Neck vertebra', fact: 'Its neck was short and muscular, built to support its heavy head.' },
-            { id: '0-3', name: 'Rib cage', fact: 'The ribs protected vital organs and supported its huge body mass.' },
-            { id: '0-4', name: 'Spine', fact: 'The spine was made of sturdy vertebrae with air pockets to save weight.' },
-            { id: '0-5', name: 'Pelvis', fact: 'The wide pelvis anchored the powerful muscles of its hind legs.' },
-            { id: '0-6', name: 'Left forearm', fact: 'Its arms were only about 1 meter long, yet could lift up to 200 kg!' },
-            { id: '0-7', name: 'Right forearm', fact: 'The two-fingered hands were used to grip prey or push off the ground.' },
-            { id: '0-8', name: 'Left leg', fact: 'Its huge thigh bone let it reach speeds of 20\u201325 km/h.' },
-            { id: '0-9', name: 'Right leg', fact: 'A three-toed foot spread its many-ton weight evenly on the ground.' },
-            { id: '0-10', name: 'Tail', fact: 'The long, heavy tail balanced out its massive head while walking.' }
+            { id: '0-1', fact: 'T-Rex\u2019s bite force reached 6 tons \u2014 strong enough to crush a car!' },
+            { id: '0-2', fact: 'Its neck was short and muscular, built to support its heavy head.' },
+            { id: '0-3', fact: 'The ribs protected vital organs and supported its huge body mass.' },
+            { id: '0-4', fact: 'Its arms were only about 1 meter long, yet could lift up to 200 kg!' },
+            { id: '0-5', fact: 'The spine was made of sturdy vertebrae with air pockets to save weight.' },
+            { id: '0-6', fact: 'The two-fingered hands were used to grip prey or push off the ground.' },
+            { id: '0-7', fact: 'The wide pelvis anchored the powerful muscles of its hind legs.' },
+            { id: '0-8', fact: 'Its huge thigh bone let it reach speeds of 20\u201325 km/h.' },
+            { id: '0-9', fact: 'A three-toed foot spread its many-ton weight evenly on the ground.' },
+            { id: '0-10', fact: 'The long, heavy tail balanced out its massive head while walking.' }
         ]
     },
     1: {
@@ -243,16 +286,16 @@ const DINO_TEXT_EN = {
         length: '9 m',
         weight: '3 tons',
         bones: [
-            { id: '1-1', name: 'Skull', fact: 'Its brain was about the size of a walnut \u2014 one of the smallest of any dinosaur!' },
-            { id: '1-2', name: 'Neck vertebrae', fact: 'The neck was short, made up of 10 vertebrae.' },
-            { id: '1-3', name: 'Back vertebrae', fact: 'The spine had special ridges that anchored the back plates.' },
-            { id: '1-4', name: 'Bony plate', fact: 'The back plates may have changed color to attract mates or scare off enemies!' },
-            { id: '1-5', name: 'Tail vertebrae', fact: 'Four sharp spikes were mounted on the tail \u2014 a fearsome weapon against predators.' },
-            { id: '1-6', name: 'Tail spikes', fact: 'Each spike could grow 60\u201390 cm long!' },
-            { id: '1-7', name: 'Pelvis', fact: 'A massive pelvis helped carry the weight of its heavy plates.' },
-            { id: '1-8', name: 'Left hind leg', fact: 'Its legs were short but powerful enough to support its huge body.' },
-            { id: '1-9', name: 'Right hind leg', fact: 'Its thigh bone was up to 30 cm thick!' },
-            { id: '1-10', name: 'Armored back', fact: 'The plates were laced with blood vessels for temperature control!' }
+            { id: '1-1', fact: 'Its brain was about the size of a walnut \u2014 one of the smallest of any dinosaur!' },
+            { id: '1-2', fact: 'The neck was short, made up of 10 vertebrae.' },
+            { id: '1-3', fact: 'The spine had special ridges that anchored the back plates.' },
+            { id: '1-4', fact: 'The back plates may have changed color to attract mates or scare off enemies!' },
+            { id: '1-5', fact: 'Four sharp spikes were mounted on the tail \u2014 a fearsome weapon against predators.' },
+            { id: '1-6', fact: 'Each spike could grow 60\u201390 cm long!' },
+            { id: '1-7', fact: 'A massive pelvis helped carry the weight of its heavy plates.' },
+            { id: '1-8', fact: 'Its legs were short but powerful enough to support its huge body.' },
+            { id: '1-9', fact: 'Its thigh bone was up to 30 cm thick!' },
+            { id: '1-10', fact: 'The plates were laced with blood vessels for temperature control!' }
         ]
     },
     2: {
@@ -262,16 +305,16 @@ const DINO_TEXT_EN = {
         length: '22 m',
         weight: '56 tons',
         bones: [
-            { id: '2-1', name: 'Skull', fact: 'Its nostrils sat on top of its head, much like modern whales!' },
-            { id: '2-2', name: 'Neck', fact: 'Its neck was 9 meters long \u2014 like a three-story building! It had 15\u201317 vertebrae.' },
-            { id: '2-3', name: 'Spine', fact: 'The vertebrae were hollow with air sacs, just like in birds, to cut down on weight.' },
-            { id: '2-4', name: 'Lungs', fact: 'Its lungs were about the size of a small car!' },
-            { id: '2-5', name: 'Forelimbs', fact: 'Its front legs were longer than its hind legs, tilting its back forward.' },
-            { id: '2-6', name: 'Hind limbs', fact: 'Its 2-meter-long thigh bone is the longest bone ever found!' },
-            { id: '2-7', name: 'Pelvis', fact: 'The pelvic girdle was incredibly strong to bear its enormous weight.' },
-            { id: '2-8', name: 'Ribs', fact: 'Its ribs formed a cage 3 meters long, protecting its organs.' },
-            { id: '2-9', name: 'Tail', fact: 'The tail was relatively short and balanced out its very long neck.' },
-            { id: '2-10', name: 'Shoulder girdle', fact: 'Powerful shoulder bones anchored its massive front legs to its body.' }
+            { id: '2-1', fact: 'Its nostrils sat on top of its head, much like modern whales!' },
+            { id: '2-2', fact: 'Its neck was 9 meters long \u2014 like a three-story building! It had 15\u201317 vertebrae.' },
+            { id: '2-3', fact: 'The vertebrae were hollow with air sacs, just like in birds, to cut down on weight.' },
+            { id: '2-4', fact: 'Its front legs were longer than its hind legs, tilting its back forward.' },
+            { id: '2-5', fact: 'Its ribs formed a cage 3 meters long, protecting its organs.' },
+            { id: '2-6', fact: 'Its 2-meter-long thigh bone is the longest bone ever found!' },
+            { id: '2-7', fact: 'The pelvic girdle was incredibly strong to bear its enormous weight.' },
+            { id: '2-8', fact: 'Its lungs were about the size of a small car!' },
+            { id: '2-9', fact: 'Powerful shoulder bones anchored its massive front legs to its body.' },
+            { id: '2-10', fact: 'The tail was relatively short and balanced out its very long neck.' }
         ]
     },
     3: {
@@ -281,16 +324,16 @@ const DINO_TEXT_EN = {
         length: '2 m',
         weight: '15 kg',
         bones: [
-            { id: '3-1', name: 'Skull', fact: 'Its skull was about 25 cm long and held 80 sharp teeth!' },
-            { id: '3-2', name: 'Eye sockets', fact: 'Its eyes faced forward, giving it binocular vision for hunting.' },
-            { id: '3-3', name: 'Neck vertebrae', fact: 'The neck was flexible and S-shaped, just like in birds.' },
-            { id: '3-4', name: 'Forearms', fact: 'Three sharp claws on each hand made excellent grasping tools!' },
-            { id: '3-5', name: 'Rib cage', fact: 'Like a bird, it had a keel bone anchoring powerful flight-related muscles.' },
-            { id: '3-6', name: 'Spine', fact: 'A flexible spine allowed for quick turns while hunting.' },
-            { id: '3-7', name: 'Pelvis', fact: 'Its pelvis was lightweight, like a bird\u2019s \u2014 great for covering long distances.' },
-            { id: '3-8', name: 'Hind legs', fact: 'Long legs let it reach speeds of up to 60 km/h!' },
-            { id: '3-9', name: 'Sickle claw', fact: 'Its famous 6.5 cm curved claw on the hind foot was used to deliver deadly strikes!' },
-            { id: '3-10', name: 'Tail', fact: 'A long tail acted as a counterbalance during sharp turns and running.' }
+            { id: '3-1', fact: 'Its skull was about 25 cm long and held 80 sharp teeth!' },
+            { id: '3-2', fact: 'Its eyes faced forward, giving it binocular vision for hunting.' },
+            { id: '3-3', fact: 'The neck was flexible and S-shaped, just like in birds.' },
+            { id: '3-4', fact: 'Three sharp claws on each hand made excellent grasping tools!' },
+            { id: '3-5', fact: 'Like a bird, it had a keel bone anchoring powerful flight-related muscles.' },
+            { id: '3-6', fact: 'A flexible spine allowed for quick turns while hunting.' },
+            { id: '3-7', fact: 'Its pelvis was lightweight, like a bird\u2019s \u2014 great for covering long distances.' },
+            { id: '3-8', fact: 'Long legs let it reach speeds of up to 60 km/h!' },
+            { id: '3-9', fact: 'Its famous 6.5 cm curved claw on the hind foot was used to deliver deadly strikes!' },
+            { id: '3-10', fact: 'A long tail acted as a counterbalance during sharp turns and running.' }
         ]
     },
     4: {
@@ -300,16 +343,16 @@ const DINO_TEXT_EN = {
         length: '9 m',
         weight: '6 tons',
         bones: [
-            { id: '4-1', name: 'Frilled skull', fact: 'Its skull reached 2 meters long \u2014 almost a third of its whole body length!' },
-            { id: '4-2', name: 'Nose horn', fact: 'A nose horn about 30 cm long protected its snout from predators.' },
-            { id: '4-3', name: 'Brow horns', fact: 'Two horns above the eyes grew up to 1 meter \u2014 a fearsome weapon!' },
-            { id: '4-4', name: 'Bony frill', fact: 'The frill protected the neck and may have flashed bright colors to attract mates!' },
-            { id: '4-5', name: 'Neck vertebrae', fact: 'Its neck was short and muscular to support the weight of its huge frill.' },
-            { id: '4-6', name: 'Spine', fact: 'A sturdy spine supported the heavy, frilled head.' },
-            { id: '4-7', name: 'Front legs', fact: 'Its front legs were shorter than its hind legs, much like a rhino.' },
-            { id: '4-8', name: 'Hind legs', fact: 'Powerful hind legs let it run quickly away from predators!' },
-            { id: '4-9', name: 'Pelvis', fact: 'A massive pelvis anchored its powerful legs to its body.' },
-            { id: '4-10', name: 'Skull framework', fact: 'The frill was full of blood vessels and could change color with blood flow!' }
+            { id: '4-1', fact: 'Its skull reached 2 meters long \u2014 almost a third of its whole body length!' },
+            { id: '4-2', fact: 'Two horns above the eyes grew up to 1 meter \u2014 a fearsome weapon!' },
+            { id: '4-3', fact: 'Its neck was short and muscular to support the weight of its huge frill.' },
+            { id: '4-4', fact: 'Its front legs were shorter than its hind legs, much like a rhino.' },
+            { id: '4-5', fact: 'The frill protected the neck and may have flashed bright colors to attract mates!' },
+            { id: '4-6', fact: 'A sturdy spine supported the heavy, frilled head.' },
+            { id: '4-7', fact: 'A massive pelvis anchored its powerful legs to its body.' },
+            { id: '4-8', fact: 'Powerful hind legs let it run quickly away from predators!' },
+            { id: '4-9', fact: 'A nose horn about 30 cm long protected its snout from predators.' },
+            { id: '4-10', fact: 'The frill was full of blood vessels and could change color with blood flow!' }
         ]
     },
     5: {
@@ -319,26 +362,29 @@ const DINO_TEXT_EN = {
         length: '1 m (1.5 m wingspan)',
         weight: '2.5 kg',
         bones: [
-            { id: '5-1', name: 'Skull', fact: 'A skull with a long beak and sharp teeth \u2014 perfect for catching fish!' },
-            { id: '5-2', name: 'Eye sockets', fact: 'Large eyes suggest excellent vision \u2014 important for hunting in the air.' },
-            { id: '5-3', name: 'Neck vertebrae', fact: 'A flexible S-shaped neck allowed it to maneuver during flight.' },
-            { id: '5-4', name: 'Wing bone', fact: 'The main wing bone \u2014 the humerus \u2014 was hollow to reduce weight.' },
-            { id: '5-5', name: 'Wing finger', fact: 'Its fourth finger was incredibly long and supported the wing membrane!' },
-            { id: '5-6', name: 'Wing membrane', fact: 'The skin membrane between body and wings could stretch up to 25 cm!' },
-            { id: '5-7', name: 'Breastbone', fact: 'A keel on the breastbone anchored powerful muscles for flapping flight.' },
-            { id: '5-8', name: 'Spine', fact: 'A lightweight spine with air sacs \u2014 just like in birds!' },
-            { id: '5-9', name: 'Pelvis', fact: 'Its pelvis was small \u2014 its whole body was built for flying.' },
-            { id: '5-10', name: 'Hind limbs', fact: 'Short legs still helped during takeoff and landing.' }
+            { id: '5-1', fact: 'A skull with a long beak and sharp teeth \u2014 perfect for catching fish!' },
+            { id: '5-2', fact: 'Large eyes suggest excellent vision \u2014 important for hunting in the air.' },
+            { id: '5-3', fact: 'A flexible S-shaped neck allowed it to maneuver during flight.' },
+            { id: '5-4', fact: 'The main wing bone \u2014 the humerus \u2014 was hollow to reduce weight.' },
+            { id: '5-5', fact: 'A keel on the breastbone anchored powerful muscles for flapping flight.' },
+            { id: '5-6', fact: 'A lightweight spine with air sacs \u2014 just like in birds!' },
+            { id: '5-7', fact: 'Its pelvis was small \u2014 its whole body was built for flying.' },
+            { id: '5-8', fact: 'Short legs still helped during takeoff and landing.' },
+            { id: '5-9', fact: 'Its fourth finger was incredibly long and supported the wing membrane!' },
+            { id: '5-10', fact: 'The skin membrane between body and wings could stretch up to 25 cm!' }
         ]
     }
 };
 
 /**
  * Переключить язык текстов динозавров (мутирует DINO_DATA на месте).
+ * Названия/иконки фрагментов костей всегда берутся из BONE_NAME_TEMPLATE по
+ * позиции и одинаковы у всех динозавров — меняются только факты и описание.
  * @param {'ru'|'en'} lang
  */
 export function setDinoLanguage(lang) {
     const table = lang === 'en' ? DINO_TEXT_EN : DINO_TEXT_RU;
+    const names = BONE_NAME_TEMPLATE[lang] || BONE_NAME_TEMPLATE.ru;
     Object.keys(DINO_DATA).forEach(id => {
         const src = table[id];
         if (!src) return;
@@ -350,10 +396,8 @@ export function setDinoLanguage(lang) {
         target.weight = src.weight;
         target.bones.forEach((bone, i) => {
             const srcBone = src.bones[i];
-            if (srcBone) {
-                bone.name = srcBone.name;
-                bone.fact = srcBone.fact;
-            }
+            if (srcBone) bone.fact = srcBone.fact;
+            bone.name = names[i];
         });
     });
 }

@@ -17,10 +17,12 @@
 </head>
 <body>
 
+    <div id="customBgLayer" class="custom-bg-layer" aria-hidden="true"></div>
+
     <nav class="main-nav">
-        <button id="btnNavMap" class="nav-tab active" data-i18n="navMap">🗺️ Карта</button>
-        <button id="btnNavMuseum" class="nav-tab" data-i18n="navMuseum">🏛️ Музей</button>
-        <button id="btnSettings" class="nav-tab nav-tab-settings" data-i18n-title="settingsTitle" title="Settings">⚙️</button>
+        <button id="btnSettings" class="pause-btn settings-btn">
+            <span id="settingsIconSlot" class="icon-slot">⚙️</span>
+        </button>
     </nav>
 
     <div id="settingsOverlay" class="modal-overlay hidden">
@@ -33,14 +35,62 @@
                 <button id="btnLangEn" class="lang-btn">EN · English</button>
             </div>
             <div class="modal-btn-row">
-                <button id="btnSettingsClose" class="modal-icon-btn modal-icon-btn-main" data-i18n-title="settingsClose" title="Close">✖️</button>
+                <button id="btnSettingsClose" class="modal-icon-btn modal-icon-btn-main">✖️</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pauseOverlay" class="modal-overlay hidden">
+        <div class="modal-card pause-card">
+            <div class="modal-icon-badge">⏸️</div>
+            <h2 data-i18n="pauseTitle">Пауза</h2>
+            <div class="pause-menu-list">
+                <button id="btnPauseResume" class="pause-menu-btn pause-menu-btn-main">
+                    <span class="pause-menu-icon">▶️</span>
+                    <span data-i18n="pauseResume">Продолжить</span>
+                </button>
+                <button id="btnPauseMap" class="pause-menu-btn">
+                    <span class="pause-menu-icon">🗺️</span>
+                    <span data-i18n="pauseGoMap">На карту</span>
+                </button>
+                <button id="btnPauseMuseum" class="pause-menu-btn">
+                    <span class="pause-menu-icon">🏛️</span>
+                    <span data-i18n="pauseGoMuseum">В музей</span>
+                </button>
+                <button id="btnPauseRestart" class="pause-menu-btn">
+                    <span class="pause-menu-icon">🔄</span>
+                    <span data-i18n="pauseRestart">Начать заново</span>
+                </button>
+                <button id="btnPauseGiveUp" class="pause-menu-btn pause-menu-btn-danger">
+                    <span class="pause-menu-icon">🏳️</span>
+                    <span data-i18n="pauseGiveUp">Сдаться</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pauseConfirmOverlay" class="modal-overlay hidden">
+        <div class="modal-card pause-confirm-card">
+            <div class="modal-icon-badge">❓</div>
+            <h2 data-i18n="pauseConfirmTitle">Точно?</h2>
+            <p id="pauseConfirmDesc" data-i18n="pauseConfirmDesc">Прогресс этой попытки уровня будет потерян.</p>
+            <div class="modal-btn-row">
+                <button id="btnPauseConfirmCancel" class="pause-confirm-btn pause-confirm-btn-cancel" data-i18n="pauseConfirmCancel">Отмена</button>
+                <button id="btnPauseConfirmOk" class="pause-confirm-btn pause-confirm-btn-ok" data-i18n="pauseConfirmOk">Да</button>
             </div>
         </div>
     </div>
 
     <div id="gameScreen" class="screen-view hidden">
         <div id="ui">
-            <h1>🦴 DINO DIG</h1>
+            <div class="game-topbar">
+                <button id="btnPause" class="pause-btn">
+                    <span id="pauseIconSlot" class="icon-slot pause-icon-fallback">
+                        <span class="pause-fallback-bar"></span>
+                        <span class="pause-fallback-bar"></span>
+                    </span>
+                </button>
+            </div>
             
             <div class="museum-bar">
                 <span id="currentDinoEmoji">🦴</span>
@@ -68,15 +118,15 @@
             </div>
 
             <div class="stats-chips">
-                <div class="chip chip-moves" id="chipMoves" data-i18n-title="movesTitle" title="Ходы">
+                <div class="chip chip-moves" id="chipMoves">
                     <span class="chip-icon">👣</span>
                     <span class="chip-value" id="moves">20</span>
                 </div>
-                <div class="chip chip-score" id="chipScore" data-i18n-title="scoreTitle" title="Очки">
+                <div class="chip chip-score" id="chipScore">
                     <span class="chip-icon">⭐</span>
                     <span class="chip-value" id="score">0</span>
                 </div>
-                <div class="chip chip-tools" id="chipTools" data-i18n-title="toolsTitle" title="Инструменты">
+                <div class="chip chip-tools" id="chipTools">
                     <span class="chip-icon">🧰</span>
                     <span class="chip-value" id="tools">0</span>
                 </div>
@@ -102,9 +152,9 @@
                         <span id="modalScore">0</span>
                     </div>
                     <div class="modal-btn-row">
-                        <button id="btnModalMuseum" class="modal-icon-btn" data-i18n-title="modalMuseumTitle" title="В музей">🏛️</button>
-                        <button id="btnModalNext" class="modal-icon-btn modal-icon-btn-main" title="Дальше">▶️</button>
-                        <button id="btnModalHome" class="modal-icon-btn" data-i18n-title="modalHomeTitle" title="На карту">🏠</button>
+                        <button id="btnModalMuseum" class="modal-icon-btn">🏛️</button>
+                        <button id="btnModalNext" class="modal-icon-btn modal-icon-btn-main">▶️</button>
+                        <button id="btnModalHome" class="modal-icon-btn">🏠</button>
                     </div>
                 </div>
             </div>
@@ -135,6 +185,17 @@
             <p id="boneDesc" data-i18n="boneDescPlaceholder">Описание и факт о кости появятся здесь при клике на открытый фрагмент.</p>
         </div>
     </div>
+
+    <nav class="bottom-nav">
+        <button id="btnNavMap" class="bottom-nav-btn active">
+            <span id="mapIconSlot" class="bottom-nav-icon icon-slot">🗺️</span>
+            <span class="bottom-nav-label" data-i18n="navMapShort">Карта</span>
+        </button>
+        <button id="btnNavMuseum" class="bottom-nav-btn">
+            <span id="museumIconSlot" class="bottom-nav-icon icon-slot">🏛️</span>
+            <span class="bottom-nav-label" data-i18n="navMuseumShort">Музей</span>
+        </button>
+    </nav>
 
     <script src="src/platform-bridge.js"></script>
     <script>window.Bridge = Bridge;</script>

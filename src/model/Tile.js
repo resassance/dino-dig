@@ -34,12 +34,12 @@ export class Tile {
     }
 
     get color() { 
-        if (this.isCrate || this.isFossil) return null;
+        if (this.isCrate || this.isFossil || this.bonus !== BONUS_TYPE.NONE) return null;
         return CONFIG.COLORS[COLOR_KEYS[this.type]]; 
     }
 
     get colorKey() {
-        if (this.isCrate || this.isFossil) return null;
+        if (this.isCrate || this.isFossil || this.bonus !== BONUS_TYPE.NONE) return null;
         return COLOR_KEYS[this.type];
     }
 

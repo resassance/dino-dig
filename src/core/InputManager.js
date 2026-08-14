@@ -21,8 +21,12 @@ export class InputManager {
         const clientX = touch ? touch.clientX : e.clientX;
         const clientY = touch ? touch.clientY : e.clientY;
         
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
+        // Важно: масштабируем от ЛОГИЧЕСКОГО размера канваса (CONFIG.CANVAS_WIDTH/
+        // HEIGHT), а не от canvas.width/height напрямую — с учётом devicePixelRatio
+        // (см. Game.js) физический буфер канваса крупнее логических координат,
+        // в которых заданы OFFSET_X/TILE_SIZE и т.д.
+        const scaleX = CONFIG.CANVAS_WIDTH / rect.width;
+        const scaleY = CONFIG.CANVAS_HEIGHT / rect.height;
 
         return { 
             x: (clientX - rect.left) * scaleX, 

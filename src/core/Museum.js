@@ -82,6 +82,27 @@ export class Museum {
         return newBones;
     }
 
+    /**
+     * Откатить кости, найденные за текущую попытку уровня — вызывается при
+     * поражении/выходе из незавершённого уровня (см. Game.js showEndModal(false)
+     * и pauseMenu*). Кости засчитываются в музей насовсем только при победе.
+     * @param {Array<{id:string}>} bones
+     */
+    removeBones(bones = []) {
+        if (!bones || bones.length === 0) return;
+        let changed = false;
+        bones.forEach(b => {
+            if (b && this.unlockedBones.has(b.id)) {
+                this.unlockedBones.delete(b.id);
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.saveState();
+            this.render();
+        }
+    }
+
     // ─── Прогресс ────────────────────────────────────────────────────
 
     getTotalUnlocked() {
@@ -106,6 +127,31 @@ export class Museum {
 
     isDinoAssembled(dinoId) {
         return this.assembledDinos.has(dinoId);
+    }
+    assembleDino(dinoId) {
+        const dino = DINO_DATA[dinoId];
+        if (!dino) return;
+
+        if (this.assembledDinos.has(dinoId)) return;
+
+        this.assembledDinos.add(dinoId);
+        this.saveAssembledState();
+
+        const bridge = window.Bridge;
+        if (bridge) {
+            bridge.gameplayStop();
+            bridge.showInterstitial({
+                onClose: () => { bridge.gameplayStart(); this.render(); },
+                onError: () => { bridge.gameplayStart(); this.render(); },
+                onOffline: () => { bridge.gameplayStart(); this.render(); }
+            });
+        } else {
+            this.render();
+        }
+    }
+
+    init() {
+        this.render();
     }
 
     // ─── Инициализация ────────────────────────────────────────────────
@@ -228,6 +274,9 @@ export class Museum {
                 <p>${t('assembleCtaText')}</p>
                 <button class="btn-assemble-gold" id="btnAssembleNow">${t('assembleBtn')}</button>
             `;
+            assembleBar.querySelector('#btnAssembleNow').addEventListener('click', () => {
+                this.assembleDino(dino.id);
+            });
             assembleBar.querySelector('#btnAssembleNow').addEventListener('click', () => {
                 this.assembledDinos.add(dino.id);
                 this.saveAssembledState();
