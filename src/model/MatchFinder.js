@@ -15,9 +15,7 @@ export class MatchFinder {
             let match = [];
             for (let c = 0; c < CONFIG.COLS; c++) {
                 const t = tiles[r][c];
-                // Баффы (LINE_H/LINE_V/BOMB/COLOR_BOMB) не привязаны к цвету/типу камушка
-                // (см. Tile.js) — поэтому, как ящики и кости, они прерывают серию, а не
-                // участвуют в обычном совпадении по цвету.
+
                 if (t && !t.isCrate && !t.isFossil && !t.isMatched && t.bonus === BONUS_TYPE.NONE) {
                     if (match.length === 0 || match[0].type === t.type) {
                         match.push(t);
@@ -66,14 +64,14 @@ export class MatchFinder {
             const lineType = line[0].type;
             const isHoriz = hLines.includes(line);
 
-            const intersecting = allLines.filter(other => 
-                other !== line && 
-                other[0].type === lineType && 
+            const intersecting = allLines.filter(other =>
+                other !== line &&
+                other[0].type === lineType &&
                 other.some(t => line.includes(t))
             );
 
             let bonusType = BONUS_TYPE.NONE;
-            
+
             if (intersecting.length > 0) {
                 bonusType = BONUS_TYPE.BOMB;
             } else if (line.length >= 5) {
@@ -83,7 +81,7 @@ export class MatchFinder {
             }
 
             if (bonusType !== BONUS_TYPE.NONE) {
-                let targetTile = line.find(t => 
+                let targetTile = line.find(t =>
                     lastMovedPos && t.col === lastMovedPos.col && t.row === lastMovedPos.row
                 );
                 if (!targetTile) {

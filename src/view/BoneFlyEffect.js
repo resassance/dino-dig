@@ -1,14 +1,6 @@
 import { ASSETS } from '../config.js';
 import { getReadyImage } from '../utils/AssetLoader.js';
 
-/**
- * Анимация получения кости: появляется крупно почти на всё поле с лёгкой тряской,
- * затем улетает вверх к вкладке "Музей".
- *
- * @param {HTMLElement} layerEl  - слой поверх канваса (position:absolute, той же величины)
- * @param {HTMLElement} targetEl - куда улетает кость (например, кнопка вкладки "Музей")
- * @param {number} count         - сколько костей анимировать (последовательно, с небольшой задержкой)
- */
 export function spawnBoneFly(layerEl, targetEl, count = 1) {
     if (!layerEl || !targetEl || count <= 0) return;
 
@@ -16,7 +8,7 @@ export function spawnBoneFly(layerEl, targetEl, count = 1) {
     if (layerRect.width === 0 || layerRect.height === 0) return;
 
     for (let i = 0; i < count; i++) {
-        setTimeout(() => spawnOne(layerEl, targetEl), i * 160);
+        setTimeout(() => spawnOne(layerEl, targetEl), i * 220);
     }
 }
 
@@ -43,7 +35,6 @@ function spawnOne(layerEl, targetEl) {
     el.style.top = `${startY}px`;
 
     layerEl.appendChild(el);
-    // форсируем рефлоу, чтобы анимация появления гарантированно проигралась
     void el.offsetWidth;
     el.classList.add('appear');
 
@@ -59,6 +50,6 @@ function spawnOne(layerEl, targetEl) {
         el.style.transform = 'translate(-50%, -50%) scale(0.25)';
         el.style.opacity = '0';
 
-        setTimeout(() => el.remove(), 700);
-    }, 480);
+        setTimeout(() => el.remove(), 1150);
+    }, 900);
 }

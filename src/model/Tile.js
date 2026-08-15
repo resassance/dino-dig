@@ -18,7 +18,7 @@ export class Tile {
         this.crateHp = isCrate ? 1 : 0;
         this.bonus = bonus;
         this.isFossil = isFossil;
-        
+
         this.x = this._calcX(col);
         this.y = this._calcY(row);
         this.targetX = this.x;
@@ -33,9 +33,9 @@ export class Tile {
         this.shakeAxis = 'x';
     }
 
-    get color() { 
+    get color() {
         if (this.isCrate || this.isFossil || this.bonus !== BONUS_TYPE.NONE) return null;
-        return CONFIG.COLORS[COLOR_KEYS[this.type]]; 
+        return CONFIG.COLORS[COLOR_KEYS[this.type]];
     }
 
     get colorKey() {

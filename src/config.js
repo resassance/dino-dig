@@ -6,7 +6,7 @@ export const CONFIG = {
     OFFSET_X: 10,
     OFFSET_Y: 10,
     ANIM_SPEED: 0.2,
-    
+
     LEVEL_GOALS: {
         1: { target: 4, name: 'Раскопать костей', moves: 20 },
         2: { target: 8, name: 'Разбить ящиков', moves: 18 },
@@ -31,60 +31,55 @@ export const CANVAS_HEIGHT = CONFIG.CANVAS_HEIGHT;
 
 export const COLOR_KEYS = Object.keys(CONFIG.COLORS);
 
-// ── Кастомные ассеты (необязательно) ─────────────────────────────────
-// Просто положи файл по указанному пути — он подхватится сам.
-// Если файла нет, автоматически рисуется эмодзи-заглушка.
 export const ASSETS = {
-    // Спрайты баффов (тайлы-усиления, которые появляются после комбо)
+
     bonusSprites: {
         LINE_H: 'assets/bonus/line_h.png',
         LINE_V: 'assets/bonus/line_v.png',
         BOMB: 'assets/bonus/bomb.png',
         COLOR_BOMB: 'assets/bonus/color_bomb.png'
     },
-    // Универсальный спрайт "кости" на игровом поле (раскопки/падение костей)
+
     fossilTileSprite: 'assets/bones/fossil.png',
-    // Спрайт камушка по его цветовому ключу (см. CONFIG.COLORS, ключи '0'..'5')
+
     tileSprite: (colorKey) => `assets/tiles/${colorKey}.png`,
-    // Иконка конкретного фрагмента кости в музее, по id кости (например '0-1')
+
     boneIcon: (boneId) => `assets/bones/${boneId}.png`,
-    // Картинки динозавра в музее: собранный скелет / живой динозавр
+
     dinoSkeleton: (dinoId) => `assets/dinos/${dinoId}-skeleton.png`,
     dinoAlive: (dinoId) => `assets/dinos/${dinoId}-alive.png`,
 
-    // Иконки интерфейса. Каждая — необязательна: нет файла — рисуется эмодзи-
-    // заглушка (см. createImgOrEmoji), их же значения указаны в скобках.
     uiIcons: {
-        pause: 'assets/ui/pause.png',       // содержимое кнопки паузы (⏸️)
-        settings: 'assets/ui/settings.png', // содержимое кнопки настроек (⚙️)
-        map: 'assets/ui/map.png',           // иконка вкладки "Карта" (🗺️)
-        museum: 'assets/ui/museum.png'      // иконка вкладки "Музей" (🏛️)
+        pause: 'assets/ui/pause.png',
+        settings: 'assets/ui/settings.png',
+        map: 'assets/ui/map.png',
+        museum: 'assets/ui/museum.png',
+        resume: 'assets/ui/resume.png',
+        restart: 'assets/ui/restart.png',
+        giveUp: 'assets/ui/give_up.png',
+        confirm: 'assets/ui/confirm.png',
+        confirmOk: 'assets/ui/confirm_ok.png',
+        confirmCancel: 'assets/ui/confirm_cancel.png',
+        modalNext: 'assets/ui/modal_next.png',
+        modalRetry: 'assets/ui/modal_retry.png',
+        modalMuseum: 'assets/ui/modal_museum.png',
+        modalHome: 'assets/ui/modal_home.png',
+        addMoves: 'assets/ui/add_moves.png',
+        addTools: 'assets/ui/add_tools.png',
+        watchAd: 'assets/ui/watch_ad.png'
     },
-    // Иконка типа уровня на карте уровней, по типу (1 = раскопки, 2 = ящики,
-    // 3 = спуск костей) — см. LevelMap.js. Нет файла — эмодзи-заглушка.
+
     levelTypeIcon: (type) => `assets/ui/level_type_${type}.png`,
 
-    // Необязательный фон игры (см. body/.custom-bg-layer в style.css). Если
-    // файла нет — остаётся текущий тёмный градиент/текстура, как и раньше.
     background: 'assets/ui/background.jpg'
 };
 
-// ── Единый "скелет" фрагментов костей ──────────────────────────────────
-// Раньше у каждого динозавра были свои названия костей (например, у T-Rex —
-// "Левая передняя лапа", у Стегозавра — "Костная пластина"), из-за чего кости
-// с одинаковым номером у разных динозавров назывались и выглядели по-разному.
-// Теперь названия и иконки фрагментов унифицированы по позиции (1..10) для
-// ВСЕХ динозавров — так же, как они были у Велоцираптора: X-5 у любого
-// динозавра — это всегда "Грудная клетка" и т.д. Уникальными остаются только
-// факты (bone.fact) — интересные особенности конкретного вида.
 const BONE_NAME_TEMPLATE = {
     ru: ['Череп', 'Глазницы', 'Шейные позвонки', 'Передние лапы', 'Грудная клетка', 'Позвоночник', 'Таз', 'Задние лапы', 'Коготь', 'Хвост'],
     en: ['Skull', 'Eye sockets', 'Neck vertebrae', 'Forelimbs', 'Rib cage', 'Spine', 'Pelvis', 'Hind legs', 'Claw', 'Tail']
 };
 const BONE_ICON_TEMPLATE = ['💀', '👁️', '🦴', '🦾', '🫁', '🦴', '🦴', '🦵', '⚔️', '🐊'];
 
-// Собирает массив из 10 фрагментов кости для динозавра dinoId: id/name/icon —
-// по единому шаблону выше, fact — уникальный текст для каждой позиции.
 function buildBones(dinoId, facts) {
     return facts.map((fact, i) => ({
         id: `${dinoId}-${i + 1}`,
@@ -95,7 +90,7 @@ function buildBones(dinoId, facts) {
 }
 
 export const DINO_DATA = {
-    // ID динозавра соответствует типу тайла в игре (0-5)
+
     0: {
         id: 0,
         name: 'Тираннозавр Рекс',
@@ -236,11 +231,6 @@ export const DINO_DATA = {
     }
 };
 
-// ── Локализация текстов динозавров ───────────────────────────────────
-// DINO_DATA хранит "текущий язык" и мутируется на месте через setDinoLanguage(),
-// поэтому все модули, однажды импортировавшие DINO_DATA, всегда видят актуальный текст.
-// Названия/иконки фрагментов костей больше НЕ хранятся по языкам отдельно —
-// они всегда берутся из BONE_NAME_TEMPLATE по позиции (см. buildBones выше).
 function snapshotDinoFacts(source) {
     const snap = {};
     Object.keys(source).forEach(id => {
@@ -376,12 +366,6 @@ const DINO_TEXT_EN = {
     }
 };
 
-/**
- * Переключить язык текстов динозавров (мутирует DINO_DATA на месте).
- * Названия/иконки фрагментов костей всегда берутся из BONE_NAME_TEMPLATE по
- * позиции и одинаковы у всех динозавров — меняются только факты и описание.
- * @param {'ru'|'en'} lang
- */
 export function setDinoLanguage(lang) {
     const table = lang === 'en' ? DINO_TEXT_EN : DINO_TEXT_RU;
     const names = BONE_NAME_TEMPLATE[lang] || BONE_NAME_TEMPLATE.ru;
@@ -402,13 +386,11 @@ export function setDinoLanguage(lang) {
     });
 }
 
-// Получить все ID костей для определённого динозавра
 export function getDinoBoneIds(dinoId) {
     const dino = DINO_DATA[dinoId];
     return dino ? dino.bones.map(b => b.id) : [];
 }
 
-// Получить кость по ID
 export function getBoneById(boneId) {
     for (const dinoId in DINO_DATA) {
         const bone = DINO_DATA[dinoId].bones.find(b => b.id === boneId);
@@ -417,10 +399,8 @@ export function getBoneById(boneId) {
     return null;
 }
 
-// Общее количество костей
 export const TOTAL_BONES = Object.values(DINO_DATA).reduce((sum, dino) => sum + dino.bones.length, 0);
 
-// MUSEUM_DATA для совместимости со старым кодом
 export const MUSEUM_DATA = {
     dinoName: 'Тираннозавр Рекс (T-Rex)',
     totalBones: DINO_DATA[0].bones.length,

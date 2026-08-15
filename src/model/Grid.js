@@ -37,10 +37,6 @@ export class Grid {
         const crateCount = options.crateCount || 8;
         const fossilCount = Math.min(options.fossilCount || 3, this.cols);
 
-        // Полностью пересоздаём массив тайлов. Нельзя оставлять ссылку на старый,
-        // потому что рендерер и update() могут использовать его пока init() ещё не
-        // дошёл до заполнения. Двойное присваивание гарантирует, что у GC нет
-        // промежуточных ссылок на старые плитки.
         this.tiles.length = 0;
         this.tiles = [];
         this.lastMovedPos = null;
@@ -181,12 +177,6 @@ export class Grid {
 
         if (matchedSet.size === 0) return { hasMatches: false, bonusesToSpawn: [], matchedTypes: [] };
 
-        // Тайлы, зацепленные ТОЛЬКО каскадом баффа (например весь ряд при LINE_H), а
-        // не изначальным совпадением/инструментом. Для них ниже в removeMatches НЕ
-        // применяется общий 4-сторонний урон по соседним ящикам — иначе, например,
-        // LINE_H по одному ряду "просачивался" и ломал ящики в соседних рядах сверху
-        // и снизу. Ящики, которые бафф должен задеть напрямую (строго в своей форме),
-        // собираем отдельно в _bonusCratesToDamage.
         this._bonusExplodedTiles = new Set();
         this._bonusCratesToDamage = new Set();
 
@@ -210,7 +200,6 @@ export class Grid {
             }
         }
 
-        // Собираем уникальные типы совпавших тайлов (динозавры)
         const matchedTypes = [];
         matchedSet.forEach(tile => {
             if (!tile.isCrate && !tile.isFossil && tile.type !== undefined) {
@@ -249,11 +238,7 @@ export class Grid {
                 }
             }
         } else if (bonus === BONUS_TYPE.COLOR_BOMB) {
-            // Баффы больше не хранят "свой" цвет (см. Tile.js/removeMatches) — если
-            // цветовая бомба активируется сама по себе (двойной тап), а не через своп
-            // с обычным камушком, у неё нет унаследованного type. В этом случае берём
-            // самый часто встречающийся на поле цвет, а не привязываем её к случайному
-            // цвету, доставшемуся ей "по наследству" при спавне.
+
             const targetType = (type !== null && type !== undefined) ? type : this._dominantType();
             for (let row = 0; row < this.rows; row++) {
                 for (let col = 0; col < this.cols; col++) {
@@ -265,8 +250,6 @@ export class Grid {
         return affected;
     }
 
-    // Самый часто встречающийся сейчас на поле цвет обычных камушков (не баффов,
-    // не ящиков, не костей) — используется как цель для "ничейной" цветовой бомбы.
     _dominantType() {
         const counts = {};
         for (let r = 0; r < this.rows; r++) {
@@ -288,9 +271,6 @@ export class Grid {
         return best;
     }
 
-    // Ящики, которые бафф задевает НАПРЯМУЮ, строго в пределах своей формы
-    // (тот же ряд для LINE_H, та же колонка для LINE_V, область 3x3 для BOMB).
-    // Цветовая бомба ящики не трогает — у ящиков нет цвета.
     _getBonusAffectedCrates(tile) {
         const crates = [];
         const { col: c, row: r, bonus } = tile;
@@ -334,8 +314,6 @@ export class Grid {
         let destroyedCratesCount = 0;
         let unburiedFossilsCount = 0;
 
-        // Ящики, которые баффы задели НАПРЯМУЮ, строго в своей форме (ряд/колонка/3x3) —
-        // посчитаны заранее в findAndMarkMatches, до того как затронутые тайлы обнулятся.
         const cratesToDamage = new Set(this._bonusCratesToDamage || []);
         const bonusExploded = this._bonusExplodedTiles || new Set();
 
@@ -350,20 +328,14 @@ export class Grid {
 
                     if (!t.isCrate) {
                         this.tiles[r][c] = null;
-                        
+
                         if (digLayer) {
                             const unburied = digLayer.dig(c, r);
                             if (unburied) unburiedFossilsCount++;
                         }
 
-                        // Общий урон по соседям применяем только к тайлам, уничтоженным
-                        // обычным совпадением/инструментом — НЕ к тайлам, зацепленным
-                        // каскадом баффа (те уже учтены выше через _bonusCratesToDamage,
-                        // строго в пределах формы баффа). Иначе, например, LINE_H по
-                        // одному ряду продолжал бы "доставать" ящики в соседних рядах.
                         if (!bonusExploded.has(t)) {
-                            // Проверяем соседей по всем 4 сторонам (горизонталь и вертикаль),
-                            // чтобы комбинация любого направления могла уничтожить стоящий рядом ящик.
+
                             const neighbors = [
                                 {c: c+1, r: r}, {c: c-1, r: r},
                                 {c: c, r: r+1}, {c: c, r: r-1}
@@ -393,9 +365,7 @@ export class Grid {
         });
 
         bonusesToSpawn.forEach(b => {
-            // Баффы не привязаны к конкретному цвету/типу камушка (см. Tile.color) —
-            // поэтому колор здесь намеренно не передаём, даже если линия, породившая
-            // бафф, была определённого цвета.
+
             const newBonusTile = new Tile(b.col, b.row, null, false, b.bonusType);
             this.tiles[b.row][b.col] = newBonusTile;
         });

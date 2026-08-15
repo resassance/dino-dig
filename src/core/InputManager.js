@@ -20,17 +20,13 @@ export class InputManager {
         const touch = e.changedTouches ? e.changedTouches[0] : (e.touches ? e.touches[0] : null);
         const clientX = touch ? touch.clientX : e.clientX;
         const clientY = touch ? touch.clientY : e.clientY;
-        
-        // Важно: масштабируем от ЛОГИЧЕСКОГО размера канваса (CONFIG.CANVAS_WIDTH/
-        // HEIGHT), а не от canvas.width/height напрямую — с учётом devicePixelRatio
-        // (см. Game.js) физический буфер канваса крупнее логических координат,
-        // в которых заданы OFFSET_X/TILE_SIZE и т.д.
+
         const scaleX = CONFIG.CANVAS_WIDTH / rect.width;
         const scaleY = CONFIG.CANVAS_HEIGHT / rect.height;
 
-        return { 
-            x: (clientX - rect.left) * scaleX, 
-            y: (clientY - rect.top) * scaleY 
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
         };
     }
 
@@ -118,8 +114,7 @@ export class InputManager {
             e.preventDefault();
             onStart(e);
         });
-        // mouseup слушаем на window, а не на canvas: иначе быстрый свайп,
-        // который заканчивается за пределами канваса, вообще не засчитывался.
+
         window.addEventListener('mouseup', onEnd);
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -128,9 +123,6 @@ export class InputManager {
         this.canvas.addEventListener('touchend', onEnd, { passive: false });
         this.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
-        // Полностью блокируем нативное выделение текста, контекстное меню и drag
-        // на канвасе — на десктопе перетаскивание тайла иначе вызывало выделение
-        // поля или контекстное меню браузера.
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
         this.canvas.addEventListener('selectstart', e => e.preventDefault());
         this.canvas.addEventListener('dragstart', e => e.preventDefault());

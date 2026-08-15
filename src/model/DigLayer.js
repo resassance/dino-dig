@@ -9,7 +9,6 @@ export class DigLayer {
         this.buriedFossils = [];
     }
 
-    // fossilParam может быть как массивом [{r, c}], так и числом (кол-во костей)
     init(defaultDepth = 2, fossilParam = 4) {
         this.layer = [];
         this.buriedFossils = [];

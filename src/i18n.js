@@ -9,7 +9,7 @@ function detectDefaultLang() {
             const envLang = bridge.getEnvLanguage();
             if (envLang === 'ru' || envLang === 'en') return envLang;
         }
-    } catch (e) { /* ignore */ }
+    } catch (e) {  }
     return 'ru';
 }
 
@@ -17,7 +17,7 @@ function loadStoredLang() {
     try {
         const saved = localStorage.getItem(LANG_STORAGE_KEY);
         if (saved === 'ru' || saved === 'en') return saved;
-    } catch (e) { /* ignore */ }
+    } catch (e) {  }
     return null;
 }
 
@@ -31,7 +31,7 @@ export function setLang(lang) {
     if (lang !== 'ru' && lang !== 'en') return;
     if (lang === currentLang) return;
     currentLang = lang;
-    try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) { /* ignore */ }
+    try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) {  }
     document.documentElement.lang = lang;
     listeners.forEach(cb => cb(lang));
 }
@@ -43,14 +43,10 @@ export function onLangChange(cb) {
 
 const STRINGS = {
     ru: {
-        navMap: '🗺️ Карта',
-        navMuseum: '🏛️ Музей',
         navMapShort: 'Карта',
         navMuseumShort: 'Музей',
-        settingsBtn: '⚙️',
         settingsTitle: 'Настройки',
         settingsLang: 'Язык',
-        settingsClose: 'Закрыть',
 
         pauseTitle: 'Пауза',
         pauseResume: 'Продолжить',
@@ -63,10 +59,17 @@ const STRINGS = {
         pauseConfirmCancel: 'Отмена',
         pauseConfirmOk: 'Да',
 
+        tooltipMovesInfo: 'Ходы — каждый свап тайлов тратит один ход. Закончатся ходы — уровень придётся начать заново.',
+        tooltipScoreInfo: 'Очки начисляются за каждое совпадение и активацию баффа. Чем длиннее цепочка — тем больше очков.',
+        tooltipToolsInfo: 'Инструменты тратятся на кирку и динамит: кирка убирает один камушек, динамит — область 3×3.',
+        tooltipAddMovesDesc: 'Закончились ходы раньше времени? Посмотри рекламу и получи ещё немного ходов на этот уровень.',
+        tooltipAddMovesBtn: '▶️ Смотреть рекламу: +5 ходов',
+        tooltipAddToolsDesc: 'Инструменты закончились. Посмотри рекламу и получи ещё немного инструментов.',
+        tooltipAddToolsBtn: '▶️ Смотреть рекламу: +2 инструмента',
+
+        modalWatchAdBtn: 'Смотреть рекламу: +5 ходов',
+
         levelBadgeLabel: 'Уровень',
-        movesTitle: 'Ходы',
-        scoreTitle: 'Очки',
-        toolsTitle: 'Инструменты',
         pickaxeLabel: '⛏️ Кирка (1)',
         dynamiteLabel: '🧨 Динамит (2)',
 
@@ -75,11 +78,6 @@ const STRINGS = {
         goalLabelDrop: 'Спусти кости',
 
         museumBarLabel: 'Кости',
-
-        modalNextTitle: 'Следующий уровень',
-        modalRetryTitle: 'Попробовать снова',
-        modalMuseumTitle: 'В музей',
-        modalHomeTitle: 'На карту',
 
         modalWinTitle: 'Уровень пройден!',
         modalWinDesc: 'Отличная работа! Уровень успешно пройден.',
@@ -94,7 +92,6 @@ const STRINGS = {
         levelTypeDig: 'Раскопки',
         levelTypeCrates: 'Ящики со снаряжением',
         levelTypeDrop: 'Кости вниз',
-        levelNodeTooltip: (label, n) => `${label} · уровень ${n}`,
 
         museumHeaderTitle: '🏛️ Главная Экспозиция',
         boneNamePlaceholder: 'Название кости',
@@ -120,14 +117,10 @@ const STRINGS = {
         statPeriod: '⏳ Период:'
     },
     en: {
-        navMap: '🗺️ Map',
-        navMuseum: '🏛️ Museum',
         navMapShort: 'Map',
         navMuseumShort: 'Museum',
-        settingsBtn: '⚙️',
         settingsTitle: 'Settings',
         settingsLang: 'Language',
-        settingsClose: 'Close',
 
         pauseTitle: 'Paused',
         pauseResume: 'Resume',
@@ -140,10 +133,17 @@ const STRINGS = {
         pauseConfirmCancel: 'Cancel',
         pauseConfirmOk: 'Yes',
 
+        tooltipMovesInfo: 'Moves — every tile swap costs one move. Run out of moves and the level restarts.',
+        tooltipScoreInfo: 'Score is earned for every match and bonus activation. Longer chains are worth more.',
+        tooltipToolsInfo: 'Tools power the pickaxe and dynamite: the pickaxe clears one tile, dynamite clears a 3x3 area.',
+        tooltipAddMovesDesc: "Ran out of moves early? Watch an ad to get a few more moves for this level.",
+        tooltipAddMovesBtn: '▶️ Watch ad: +5 moves',
+        tooltipAddToolsDesc: 'Out of tools. Watch an ad to get a few more.',
+        tooltipAddToolsBtn: '▶️ Watch ad: +2 tools',
+
+        modalWatchAdBtn: 'Watch ad: +5 moves',
+
         levelBadgeLabel: 'Level',
-        movesTitle: 'Moves',
-        scoreTitle: 'Score',
-        toolsTitle: 'Tools',
         pickaxeLabel: '⛏️ Pickaxe (1)',
         dynamiteLabel: '🧨 Dynamite (2)',
 
@@ -152,11 +152,6 @@ const STRINGS = {
         goalLabelDrop: 'Drop the bones down',
 
         museumBarLabel: 'Bones',
-
-        modalNextTitle: 'Next level',
-        modalRetryTitle: 'Try again',
-        modalMuseumTitle: 'Go to museum',
-        modalHomeTitle: 'Go to map',
 
         modalWinTitle: 'Level complete!',
         modalWinDesc: 'Great job! You cleared the level.',
@@ -171,7 +166,6 @@ const STRINGS = {
         levelTypeDig: 'Digging',
         levelTypeCrates: 'Supply crates',
         levelTypeDrop: 'Falling bones',
-        levelNodeTooltip: (label, n) => `${label} · level ${n}`,
 
         museumHeaderTitle: '🏛️ Main Exhibition',
         boneNamePlaceholder: 'Bone name',
@@ -198,10 +192,6 @@ const STRINGS = {
     }
 };
 
-/**
- * @param {string} key
- * @param {...any} args
- */
 export function t(key, ...args) {
     const table = STRINGS[currentLang] || STRINGS.ru;
     const entry = table[key];

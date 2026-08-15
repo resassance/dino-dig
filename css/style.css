@@ -1,6 +1,6 @@
 html {
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
+    height: 100%;
+    overflow: hidden;
 }
 
 * {
@@ -30,9 +30,19 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
     padding-top: 12px;
     padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+}
+
+#mapScreen,
+#museumScreen {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 #ui {
@@ -89,7 +99,6 @@ h1 {
     gap: 8px;
 }
 
-/* ── Новый HUD уровня: значок уровня + карточка цели ── */
 .level-hud {
     display: flex;
     flex-wrap: wrap;
@@ -187,7 +196,6 @@ h1 {
     transition: width 0.3s ease;
 }
 
-/* ── Чипы-статы: ходы / очки / инструменты ── */
 .stats-chips {
     display: flex;
     flex-wrap: wrap;
@@ -205,6 +213,34 @@ h1 {
     padding: 6px 14px;
     font-weight: 700;
     font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease;
+}
+
+.chip:hover {
+    border-color: #8c5e38;
+    transform: scale(1.04);
+}
+
+.chip-add-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #543922;
+    background: linear-gradient(160deg, #2b1c10, #1a110a);
+    color: #74b9ff;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease;
+}
+
+.chip-add-btn:hover {
+    border-color: #74b9ff;
+    transform: scale(1.1);
 }
 
 .chip-icon {
@@ -289,14 +325,14 @@ h1 {
 }
 
 .bone-fly.appear {
-    animation: boneFlyAppear 0.48s ease-out forwards;
+    animation: boneFlyAppear 0.9s ease-out forwards;
 }
 
 .bone-fly.flying {
-    transition: left 0.62s cubic-bezier(.3,.6,.35,1),
-                top 0.62s cubic-bezier(.3,.6,.35,1),
-                transform 0.62s ease-in,
-                opacity 0.62s ease-in;
+    transition: left 1.1s cubic-bezier(.3,.6,.35,1),
+                top 1.1s cubic-bezier(.3,.6,.35,1),
+                transform 1.1s ease-in,
+                opacity 1.1s ease-in;
 }
 
 @keyframes boneFlyAppear {
@@ -321,7 +357,7 @@ canvas {
     user-select: none;
 }
 
-#settingsOverlay, #pauseOverlay {
+#settingsOverlay, #pauseOverlay, #pauseConfirmOverlay {
     position: fixed;
     border-radius: 0;
     z-index: 200;
@@ -337,6 +373,12 @@ canvas {
     align-items: center;
     justify-content: center;
     z-index: 100;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+}
+
+.modal-overlay.open {
+    opacity: 1;
 }
 
 .modal-overlay.hidden {
@@ -352,6 +394,14 @@ canvas {
     width: 300px;
     max-width: 88vw;
     box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 30px rgba(224,169,109,0.15);
+    transform: scale(0.86) translateY(14px);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+}
+
+.modal-overlay.open .modal-card {
+    transform: scale(1) translateY(0);
+    opacity: 1;
 }
 
 .modal-icon-badge {
@@ -429,10 +479,63 @@ canvas {
     box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
 }
 
+.modal-watch-ad-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 2px solid #55efc4;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), box-shadow 0.15s ease;
+}
+
+.modal-watch-ad-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+}
+
+.modal-watch-ad-btn:active {
+    transform: scale(0.98);
+}
+
 .screen-view {
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+#gameScreen {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    justify-content: flex-start;
+}
+
+.game-scale-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform-origin: top center;
+}
+
+.screen-view:not(.hidden) {
+    animation: screenFadeIn 0.32s ease;
+}
+
+@keyframes screenFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .screen-view.hidden {
@@ -450,8 +553,7 @@ canvas {
     justify-content: flex-end;
     padding: 0 14px;
     z-index: 200;
-    /* Сама полоса — невидимая и "прозрачная" для кликов (иначе перекрывала бы
-       контент под собой на всю ширину колонки), кликабельна только кнопка. */
+
     pointer-events: none;
 }
 
@@ -459,9 +561,6 @@ canvas {
     pointer-events: auto;
 }
 
-/* ── Нижний бар навигации: Карта / Музей ──────────────────────────────
-   Тематическое оформление (кость + янтарные тона, как весь остальной UI),
-   активная вкладка "подсвечивается" и увеличивается. */
 .bottom-nav {
     position: fixed;
     left: 0;
@@ -516,19 +615,12 @@ canvas {
     justify-content: center;
 }
 
-img.bottom-nav-icon-img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-}
-
 .bottom-nav-label {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.2px;
 }
 
-/* Активная вкладка: приподнимается, увеличивается и мягко светится золотом */
 .bottom-nav-btn.active {
     background: linear-gradient(160deg, #8c5e38, #5c3a1b);
     border-color: #ffd700;
@@ -548,16 +640,12 @@ img.bottom-nav-icon-img {
     100% { transform: scale(1) rotate(0deg); }
 }
 
-/* ── Верхняя панель уровня: кнопка паузы ── */
 .game-topbar {
     display: flex;
     align-items: center;
     width: 100%;
 }
 
-/* Кнопка паузы (в игре) и кнопка настроек (main-nav) — одна и та же круглая
-   иконка-кнопка, зеркально расположенная: пауза слева в своей панели, а
-   настройки справа в своей — см. .main-nav { justify-content: flex-end }. */
 .pause-btn {
     width: 40px;
     height: 40px;
@@ -587,11 +675,6 @@ img.bottom-nav-icon-img {
     line-height: 1;
 }
 
-/* Заглушка иконки паузы по умолчанию — две амбер-палочки в тон интерфейсу,
-   а не эмодзи ⏸️ (в большинстве шрифтов рисуется цветным синим квадратом,
-   который не вписывается в круглую кнопку и выбивается из цветовой схемы).
-   Если положить свой файл по ASSETS.uiIcons.pause — эта заглушка заменится
-   на картинку (см. mountCustomIcon в main.js), а не наоборот. */
 .pause-icon-fallback {
     gap: 4px;
 }
@@ -604,16 +687,12 @@ img.bottom-nav-icon-img {
 }
 
 img.ui-icon-img {
+    width: 1em;
+    height: 1em;
     object-fit: contain;
+    vertical-align: middle;
 }
 
-img.pause-icon-img,
-img.settings-icon-img {
-    width: 20px;
-    height: 20px;
-}
-
-/* ── Меню паузы ── */
 .pause-card {
     width: 300px;
 }
@@ -640,7 +719,6 @@ img.settings-icon-img {
     transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease, background 0.15s ease;
 }
 
-/* По требованию: увеличение по наведению/нажатию, без сдвига в сторону */
 .pause-menu-btn:hover {
     border-color: #8c5e38;
     background: #3d2817;
@@ -676,7 +754,6 @@ img.settings-icon-img {
     border-color: #e05a5a;
 }
 
-/* ── Подтверждение действия в меню паузы (своя модалка вместо confirm()) ── */
 .pause-confirm-card {
     width: 300px;
     text-align: center;
@@ -723,12 +800,6 @@ img.settings-icon-img {
     box-shadow: 0 6px 18px rgba(224, 90, 90, 0.45);
 }
 
-/* ── Необязательный кастомный фон игры ──────────────────────────────────
-   Если ASSETS.background успешно загрузился (см. main.js), поверх обычного
-   тёмного градиента body показывается картинка, но затухающая в этот же
-   тон книзу экрана — там, где игровое поле и основной контент остаются
-   нетронутыми. Пока картинки нет — слой невидим (opacity: 0), ничего не
-   меняется по сравнению с обычным фоном body. */
 .custom-bg-layer {
     position: fixed;
     inset: 0;
@@ -752,6 +823,81 @@ img.settings-icon-img {
     background: linear-gradient(180deg, transparent 0%, transparent 22%, #0b0704 68%, #0b0704 100%);
 }
 
+.custom-tooltip {
+    position: fixed;
+    z-index: 300;
+    width: 240px;
+    max-width: 80vw;
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+    transform-origin: top center;
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+}
+
+.custom-tooltip.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.custom-tooltip.hidden {
+    display: none;
+}
+
+.custom-tooltip-arrow {
+    position: absolute;
+    top: -7px;
+    width: 14px;
+    height: 14px;
+    background: #2b1c10;
+    border-left: 2px solid #e0a96d;
+    border-top: 2px solid #e0a96d;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.custom-tooltip-body {
+    background: linear-gradient(165deg, #2b1c10, #1c130a);
+    border: 2px solid #e0a96d;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    text-align: center;
+}
+
+.custom-tooltip-body p {
+    font-size: 13px;
+    color: #d4b28c;
+    line-height: 1.4;
+    margin: 0 0 10px;
+}
+
+.custom-tooltip-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 2px solid #55efc4;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+}
+
+.custom-tooltip-action:hover {
+    transform: scale(1.03);
+}
+
+.custom-tooltip-action.hidden {
+    display: none;
+}
+
 .settings-card {
     width: 280px;
 }
@@ -766,34 +912,31 @@ img.settings-icon-img {
 
 .lang-toggle {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    justify-content: center;
     margin-bottom: 22px;
 }
 
 .lang-btn {
-    background: #2b1c10;
-    color: #d4b28c;
-    border: 2px solid #543922;
-    padding: 10px 14px;
-    border-radius: 10px;
+    background: linear-gradient(160deg, #2b1c10, #1a110a);
+    color: #f0e6d2;
+    border: 2px solid #e0a96d;
+    padding: 12px 28px;
+    border-radius: 12px;
     font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease, background 0.15s ease;
 }
 
 .lang-btn:hover {
-    border-color: #8c5e38;
+    border-color: #ffd700;
     background: #3d2817;
+    transform: scale(1.045);
 }
 
-.lang-btn.active {
-    background: linear-gradient(135deg, #8c5e38, #5c3a1b);
-    color: #fff;
-    border-color: #ffd700;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+.lang-btn:active {
+    transform: scale(1.09);
 }
 
 #museumScreen {
@@ -868,8 +1011,6 @@ img.settings-icon-img {
     transform: scale(1.05);
     border-color: #ffd700;
 }
-
-
 
 .bone-info-card {
     width: 100%;
@@ -1061,7 +1202,6 @@ img.settings-icon-img {
     display: none !important;
 }
 
-/* ── Вкладки динозавров в музее ── */
 .museum-dino-tabs {
     display: flex;
     gap: 8px;
@@ -1124,7 +1264,6 @@ img.settings-icon-img {
     color: #ffd700;
 }
 
-/* ── Заголовок динозавра ── */
 .museum-dino-header {
     background: #1e130a;
     border: 2px solid #3d2817;
@@ -1192,13 +1331,6 @@ img.settings-icon-img {
     white-space: nowrap;
 }
 
-/* ── Слоты костей ──────────────────────────────────────────────────────
-   Раньше было жёстко repeat(5, 1fr): на узких экранах контент слота (эмодзи
-   + подпись #N) не давал колонке сжаться меньше своего "минимального"
-   размера, и 5-я/10-я кость вылезали за экран. Теперь колонки сами решают,
-   сколько их поместится в ряд (auto-fit) в пределах разумного диапазона
-   размера (minmax) — на узком экране ряд станет короче (3-4 в ряд) и
-   лишнее аккуратно переносится на следующую строку, а не обрезается. */
 .bones-slots-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
@@ -1226,7 +1358,6 @@ img.bone-icon {
     margin-top: 4px;
 }
 
-/* ── Модальное окно сборки ── */
 .dino-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -1312,7 +1443,6 @@ img.bone-icon {
     margin-bottom: 10px;
 }
 
-/* ── Карта уровней ── */
 #mapScreen {
     width: 100%;
     max-width: 100%;
@@ -1434,14 +1564,11 @@ img.level-node-icon-img {
     50% { box-shadow: 0 0 22px rgba(255, 215, 0, 0.8); }
 }
 
-/* ── На широких экранах (ПК) слоты костей заметно крупнее, но иконка внутри
-   раньше оставалась мелкой фиксированного размера — увеличиваем её тоже. ── */
 @media (min-width: 600px) {
     .bone-icon { font-size: 52px; }
     img.bone-icon { max-width: 72px; max-height: 72px; }
 }
 
-/* ── Адаптив для узких экранов: не даём элементам наезжать друг на друга ── */
 @media (max-width: 420px) {
     body { padding-top: 8px; }
 

@@ -132,7 +132,7 @@ export class BoardRenderer {
         if (tile.isFossil) {
             const sprite = getReadyImage(ASSETS.fossilTileSprite);
             if (sprite) {
-                // Свой спрайт кости — без квадратного фона/обводки под ним.
+
                 const pad2 = drawSize * 0.18;
                 ctx.drawImage(sprite, tx + pad2, ty + pad2, drawSize - pad2 * 2, drawSize - pad2 * 2);
             } else {
@@ -180,8 +180,7 @@ export class BoardRenderer {
             ctx.fillText('📦', cx, cy);
 
         } else if (tile.bonus && tile.bonus !== BONUS_TYPE.NONE) {
-            // Баффы не принадлежат никакому цвету/типу камушка — рисуем их нейтрально,
-            // одинаково для любой линии/комбо, их когда-либо породившей.
+
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
             ctx.fill();
@@ -224,8 +223,7 @@ export class BoardRenderer {
 
             const sprite = getReadyImage(ASSETS.tileSprite(tile.colorKey));
             if (sprite) {
-                // Свой спрайт камушка — рисуем как есть, без квадратного фона/обводки
-                // под ним (только скругляем углы, чтобы вписаться в сетку поля).
+
                 ctx.save();
                 this._roundRect(tx, ty, drawSize, drawSize, 6);
                 ctx.clip();

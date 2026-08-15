@@ -22,12 +22,10 @@ export class LevelMap {
         if (!this.containerEl) return;
         this.containerEl.innerHTML = '';
 
-        // Слой с двойной спиралью ДНК, рисуется позади узлов уровней
         const dnaLayer = document.createElement('div');
         dnaLayer.className = 'dna-layer';
         this.containerEl.appendChild(dnaLayer);
 
-        // Показываем весь пройденный путь + немного будущих (запертых) уровней
         const totalToShow = Math.max(this.highestLevelReached + 4, 14);
 
         for (let n = 1; n <= totalToShow; n++) {
@@ -46,9 +44,6 @@ export class LevelMap {
                 <span class="level-node-num">${n}</span>
             `;
 
-            // Готовое (✅) и запертый (🔒) — всегда эмодзи-статус. Свой спрайт
-            // можно подставить только для иконки ТИПА уровня (кирка/ящик/кость),
-            // см. ASSETS.levelTypeIcon в config.js — если файла нет, эмодзи-заглушка.
             const iconSlot = node.querySelector('.level-node-icon');
             if (isDone) {
                 iconSlot.textContent = '✅';
@@ -69,7 +64,6 @@ export class LevelMap {
             const currentEl = this.containerEl.querySelector('.level-node.current');
             if (currentEl) currentEl.scrollIntoView({ block: 'center', behavior: 'auto' });
 
-            // Растягиваем спираль ДНК на реальную высоту получившейся дорожки
             const height = this.containerEl.scrollHeight;
             dnaLayer.innerHTML = this._buildDNASvg(Math.max(height, 200));
         });
@@ -79,7 +73,7 @@ export class LevelMap {
         const width = 160;
         const centerX = width / 2;
         const amplitude = 46;
-        const wavelength = 150; // px на один полный виток спирали
+        const wavelength = 150;
         const freq = (Math.PI * 2) / wavelength;
         const step = 8;
 

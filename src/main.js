@@ -3,14 +3,9 @@ import { Museum } from './core/Museum.js';
 import { LevelMap } from './core/LevelMap.js';
 import { setDinoLanguage, ASSETS } from './config.js';
 import { t, getLang, setLang, onLangChange } from './i18n.js';
-import { createImgOrEmoji, loadImage } from './utils/AssetLoader.js';
+import { loadImage } from './utils/AssetLoader.js';
+import { openOverlay, closeOverlay } from './utils/overlay.js';
 
-// ── Требования Yandex Games: без нативных контекстных меню, тултипов и
-// блокирующих браузерных диалогов (alert/confirm/prompt) ────────────────────
-// Тултипы по наведению (атрибут title) убраны из разметки — этого хватает,
-// т.к. мы нигде не проставляем title через JS. Контекстное меню/drag-иллюзия
-// картинок и блокирующие диалоги отключаем на уровне всего документа —
-// раньше это было запрещено только на канвасе.
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('dragstart', e => e.preventDefault());
 window.alert = () => {};
@@ -28,6 +23,28 @@ const btnNavMuseum = document.getElementById('btnNavMuseum');
 const gameScreen = document.getElementById('gameScreen');
 const mapScreen = document.getElementById('mapScreen');
 const museumScreen = document.getElementById('museumScreen');
+const gameScaleWrap = document.getElementById('gameScaleWrap');
+
+function fitGameScreen() {
+    if (!gameScaleWrap || !gameScreen || gameScreen.classList.contains('hidden')) return;
+    const availableWidth = gameScreen.clientWidth;
+    const availableHeight = gameScreen.clientHeight;
+    gameScaleWrap.style.transform = 'none';
+    const naturalWidth = gameScaleWrap.offsetWidth;
+    const naturalHeight = gameScaleWrap.offsetHeight;
+    if (!naturalWidth || !naturalHeight || !availableWidth || !availableHeight) return;
+    const scale = Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight, 1);
+    gameScaleWrap.style.transform = `scale(${scale})`;
+}
+
+if (window.ResizeObserver) {
+    const gameFitObserver = new ResizeObserver(() => fitGameScreen());
+    if (gameScreen) gameFitObserver.observe(gameScreen);
+    if (gameScaleWrap) gameFitObserver.observe(gameScaleWrap);
+} else {
+    window.addEventListener('resize', fitGameScreen);
+    window.addEventListener('orientationchange', () => requestAnimationFrame(fitGameScreen));
+}
 
 function setNavLocked(locked) {
     if (btnNavMap) btnNavMap.disabled = locked;
@@ -41,6 +58,7 @@ function openGame() {
     mapScreen?.classList.add('hidden');
     museumScreen?.classList.add('hidden');
     setNavLocked(true);
+    fitGameScreen();
 }
 
 function openMap() {
@@ -76,10 +94,6 @@ window.addEventListener('switchTab', (e) => {
     }
 });
 
-// ── Локализация ───────────────────────────────────────────────────────────
-// Все статические подписи помечены атрибутом data-i18n — один общий проход
-// по ним обновляет весь интерфейс сразу. Подписи по наведению (title) больше
-// нигде не используются (требование Yandex Games — без нативных тултипов).
 function applyStaticTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.dataset.i18n);
@@ -88,8 +102,9 @@ function applyStaticTranslations() {
 
 function updateLangButtons() {
     const lang = getLang();
-    btnLangRu?.classList.toggle('active', lang === 'ru');
-    btnLangEn?.classList.toggle('active', lang === 'en');
+    if (btnLangToggle) {
+        btnLangToggle.textContent = lang === 'ru' ? 'Русский' : 'English';
+    }
 }
 
 function refreshLanguage() {
@@ -105,16 +120,15 @@ function refreshLanguage() {
 const btnSettings = document.getElementById('btnSettings');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const btnSettingsClose = document.getElementById('btnSettingsClose');
-const btnLangRu = document.getElementById('btnLangRu');
-const btnLangEn = document.getElementById('btnLangEn');
+const btnLangToggle = document.getElementById('btnLangToggle');
 
 btnSettings?.addEventListener('click', () => {
-    settingsOverlay?.classList.remove('hidden');
+    openOverlay(settingsOverlay);
     game.pause();
 });
 
 function closeSettings() {
-    settingsOverlay?.classList.add('hidden');
+    closeOverlay(settingsOverlay);
     game.resume();
 }
 
@@ -123,10 +137,10 @@ settingsOverlay?.addEventListener('click', (e) => {
     if (e.target === settingsOverlay) closeSettings();
 });
 
-btnLangRu?.addEventListener('click', () => setLang('ru'));
-btnLangEn?.addEventListener('click', () => setLang('en'));
+btnLangToggle?.addEventListener('click', () => {
+    setLang(getLang() === 'ru' ? 'en' : 'ru');
+});
 
-// ── Пауза во время уровня ────────────────────────────────────────────────
 const btnPause = document.getElementById('btnPause');
 const pauseOverlay = document.getElementById('pauseOverlay');
 const btnPauseResume = document.getElementById('btnPauseResume');
@@ -136,12 +150,12 @@ const btnPauseRestart = document.getElementById('btnPauseRestart');
 const btnPauseGiveUp = document.getElementById('btnPauseGiveUp');
 
 function openPauseMenu() {
-    pauseOverlay?.classList.remove('hidden');
+    openOverlay(pauseOverlay);
     game.pause();
 }
 
 function closePauseMenu() {
-    pauseOverlay?.classList.add('hidden');
+    closeOverlay(pauseOverlay);
     game.resume();
 }
 
@@ -151,9 +165,6 @@ pauseOverlay?.addEventListener('click', (e) => {
     if (e.target === pauseOverlay) closePauseMenu();
 });
 
-// Каждое действие меню паузы, кроме "Продолжить", необратимо (прогресс
-// попытки уровня теряется) — поэтому сначала спрашиваем подтверждение своим
-// модальным окном (нативный confirm() запрещён требованиями Yandex Games).
 const pauseConfirmOverlay = document.getElementById('pauseConfirmOverlay');
 const btnPauseConfirmOk = document.getElementById('btnPauseConfirmOk');
 const btnPauseConfirmCancel = document.getElementById('btnPauseConfirmCancel');
@@ -161,14 +172,14 @@ let pendingPauseAction = null;
 
 function askPauseConfirm(action) {
     pendingPauseAction = action;
-    pauseOverlay?.classList.add('hidden');
-    pauseConfirmOverlay?.classList.remove('hidden');
+    closeOverlay(pauseOverlay);
+    openOverlay(pauseConfirmOverlay);
 }
 
 function cancelPauseConfirm() {
     pendingPauseAction = null;
-    pauseConfirmOverlay?.classList.add('hidden');
-    pauseOverlay?.classList.remove('hidden');
+    closeOverlay(pauseConfirmOverlay);
+    openOverlay(pauseOverlay);
 }
 
 btnPauseConfirmCancel?.addEventListener('click', cancelPauseConfirm);
@@ -179,9 +190,9 @@ pauseConfirmOverlay?.addEventListener('click', (e) => {
 btnPauseConfirmOk?.addEventListener('click', () => {
     const action = pendingPauseAction;
     pendingPauseAction = null;
-    pauseConfirmOverlay?.classList.add('hidden');
+    closeOverlay(pauseConfirmOverlay);
     game.resume();
-    action?.();
+    if (action) game.showAdThenRun(action);
 });
 
 btnPauseMap?.addEventListener('click', () => askPauseConfirm(() => game.pauseMenuGoToMap()));
@@ -191,51 +202,29 @@ btnPauseGiveUp?.addEventListener('click', () => askPauseConfirm(() => game.pause
 
 onLangChange(() => refreshLanguage());
 
-// Применяем язык сразу при загрузке (сохранённый выбор, либо язык окружения платформы,
-// либо русский по умолчанию — см. src/i18n.js)
 setDinoLanguage(getLang());
 applyStaticTranslations();
 updateLangButtons();
 
-// ── Кастомные иконки интерфейса ──────────────────────────────────────────
-// Настройки/карта/музей — по умолчанию эмодзи; если положить файл по пути
-// из ASSETS.uiIcons, он подхватится автоматически (см. AssetLoader.js).
-function mountIcon(slotId, path, fallbackEmoji, extraClass) {
-    const slot = document.getElementById(slotId);
-    if (!slot) return;
-    const node = createImgOrEmoji(path, fallbackEmoji, extraClass || '');
-    slot.replaceChildren(node);
+function mountAllIcons() {
+    document.querySelectorAll('[data-icon]').forEach(slot => {
+        const key = slot.dataset.icon;
+        const path = key && ASSETS.uiIcons[key];
+        if (!path) return;
+        const probe = new Image();
+        probe.onload = () => {
+            const img = document.createElement('img');
+            img.src = path;
+            img.alt = '';
+            img.className = 'ui-icon-img';
+            slot.replaceChildren(img);
+        };
+        probe.src = path;
+    });
 }
 
-// Пауза — особый случай: заглушка по умолчанию нарисована на CSS (две
-// амбер-палочки), а не эмодзи ⏸️ (в большинстве шрифтов это цветной синий
-// квадрат, выбивающийся из круглой кнопки и цветовой схемы — см. скрин бага).
-// Поэтому здесь НЕ используем текстовый emoji-фолбэк: если своей картинки
-// нет или она не загрузилась — просто оставляем CSS-заглушку как есть.
-function mountCustomIcon(slotId, path) {
-    const slot = document.getElementById(slotId);
-    if (!slot || !path) return;
-    const probe = new Image();
-    probe.onload = () => {
-        const img = document.createElement('img');
-        img.src = path;
-        img.alt = '';
-        img.className = 'ui-icon-img pause-icon-img';
-        slot.replaceChildren(img);
-    };
-    probe.src = path;
-}
+mountAllIcons();
 
-mountCustomIcon('pauseIconSlot', ASSETS.uiIcons.pause);
-mountIcon('settingsIconSlot', ASSETS.uiIcons.settings, '⚙️', 'ui-icon-img settings-icon-img');
-mountIcon('mapIconSlot', ASSETS.uiIcons.map, '🗺️', 'ui-icon-img bottom-nav-icon-img');
-mountIcon('museumIconSlot', ASSETS.uiIcons.museum, '🏛️', 'ui-icon-img bottom-nav-icon-img');
-
-// ── Кастомный фон игры (необязательно) ───────────────────────────────────
-// Если ASSETS.background существует и грузится — показываем его поверх
-// обычного тёмного градиента body, но с плавным затуханием в этот же
-// градиент к низу экрана (там, где игровое поле и основной контент) — см.
-// .custom-bg-layer в style.css. Нет файла — просто ничего не меняется.
 (function initCustomBackground() {
     const layer = document.getElementById('customBgLayer');
     if (!layer || !ASSETS.background) return;
@@ -251,9 +240,80 @@ mountIcon('museumIconSlot', ASSETS.uiIcons.museum, '🏛️', 'ui-icon-img botto
     else entry.img.addEventListener('load', apply, { once: true });
 })();
 
-// ── Yandex Games SDK (через platform-bridge.js, см. index.html) ──────────────
-// Bridge сам определяет платформу (Yandex / CrazyGames / Telegram / standalone)
-// и молча становится no-op вне известных площадок — безопасно вызывать всегда.
+const customTooltip = document.getElementById('customTooltip');
+const customTooltipArrow = customTooltip?.querySelector('.custom-tooltip-arrow');
+const customTooltipText = document.getElementById('customTooltipText');
+const customTooltipAction = document.getElementById('customTooltipAction');
+let tooltipActionHandler = null;
+
+function positionTooltip(anchor) {
+    if (!customTooltip) return;
+    const rect = anchor.getBoundingClientRect();
+    const tw = customTooltip.offsetWidth;
+    let left = rect.left + rect.width / 2 - tw / 2;
+    left = Math.max(10, Math.min(left, window.innerWidth - tw - 10));
+    const top = rect.bottom + 10;
+    customTooltip.style.left = `${left}px`;
+    customTooltip.style.top = `${top}px`;
+    if (customTooltipArrow) {
+        customTooltipArrow.style.left = `${rect.left + rect.width / 2 - left}px`;
+    }
+}
+
+function showTooltip(anchor, text, actionLabel, onAction) {
+    if (!customTooltip || !customTooltipText || !customTooltipAction) return;
+    customTooltipText.textContent = text;
+    if (actionLabel) {
+        customTooltipAction.textContent = actionLabel;
+        customTooltipAction.classList.remove('hidden');
+    } else {
+        customTooltipAction.classList.add('hidden');
+    }
+    tooltipActionHandler = onAction || null;
+    customTooltip.classList.remove('hidden');
+    positionTooltip(anchor);
+    openOverlay(customTooltip);
+}
+
+function hideTooltip() {
+    if (!customTooltip) return;
+    closeOverlay(customTooltip, 180);
+}
+
+customTooltipAction?.addEventListener('click', () => {
+    const handler = tooltipActionHandler;
+    hideTooltip();
+    if (handler) handler();
+});
+
+document.addEventListener('click', (e) => {
+    if (!customTooltip || customTooltip.classList.contains('hidden')) return;
+    if (customTooltip.contains(e.target)) return;
+    if (e.target.closest && e.target.closest('[data-tooltip-trigger]')) return;
+    hideTooltip();
+});
+
+const chipMoves = document.getElementById('chipMoves');
+const chipScore = document.getElementById('chipScore');
+const chipTools = document.getElementById('chipTools');
+const btnAddMoves = document.getElementById('btnAddMoves');
+
+chipMoves?.addEventListener('click', () => showTooltip(chipMoves, t('tooltipMovesInfo')));
+chipScore?.addEventListener('click', () => showTooltip(chipScore, t('tooltipScoreInfo')));
+chipTools?.addEventListener('click', () => showTooltip(chipTools, t('tooltipToolsInfo')));
+
+btnAddMoves?.addEventListener('click', () => {
+    showTooltip(btnAddMoves, t('tooltipAddMovesDesc'), t('tooltipAddMovesBtn'), () => {
+        game.addMovesViaAd();
+    });
+});
+
+game.onInsufficientTool = (toolName, btn) => {
+    showTooltip(btn, t('tooltipAddToolsDesc'), t('tooltipAddToolsBtn'), () => {
+        game.addToolsViaAd();
+    });
+};
+
 (async () => {
     const bridge = window.Bridge;
     if (!bridge) return;
@@ -263,7 +323,5 @@ mountIcon('museumIconSlot', ASSETS.uiIcons.museum, '🏛️', 'ui-icon-img botto
         onResume: () => game.resume()
     });
 
-    // Сообщаем платформе, что игра прогружена и видна игроку — обязательный вызов
-    // сразу после того, как интерфейс отрисован и с игрой уже можно взаимодействовать.
     requestAnimationFrame(() => bridge.notifyGameReady());
 })();

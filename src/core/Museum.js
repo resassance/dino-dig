@@ -11,19 +11,16 @@ export class Museum {
         this.countEl = document.getElementById('museumCount');
         this.progressEl = document.getElementById('museumProgress');
 
-        // unlockedBones: Set строковых id вида '0-1', '1-3', ...
         this.unlockedBones = this.loadState();
-        // dinoId'ы, для которых игрок сам нажал "Собрать скелет" (после этого показываем экспонат)
+
         this.assembledDinos = this.loadAssembledState();
-        // какой динозавр сейчас открыт в музее
+
         this.activeDinoId = 0;
-        // режим отображения для каждого собранного динозавра
+
         this.dinoModes = {};
 
         this.init();
     }
-
-    // ─── Хранилище ────────────────────────────────────────────────────
 
     loadState() {
         const saved = localStorage.getItem('dino_museum_bones_v2');
@@ -43,12 +40,6 @@ export class Museum {
         localStorage.setItem('dino_museum_assembled_v1', JSON.stringify([...this.assembledDinos]));
     }
 
-    // ─── Добавление костей ────────────────────────────────────────────
-
-    /**
-     * Добавить следующую незапечатанную кость конкретному динозавру.
-     * Возвращает массив новых костей (0 или 1).
-     */
     addBoneForDino(dinoId) {
         const dino = DINO_DATA[dinoId];
         if (!dino) return [];
@@ -60,7 +51,6 @@ export class Museum {
         this.saveState();
         this.render();
 
-        // Проверяем, собран ли весь скелет
         const assembled = dino.bones.every(b => this.unlockedBones.has(b.id));
         if (assembled) {
             this._onDinoAssembled(dinoId);
@@ -69,10 +59,6 @@ export class Museum {
         return [{ ...nextBone, dinoId }];
     }
 
-    /**
-     * Совместимость со старым кодом Game.js:
-     * добавляет count костей активному динозавру (dinoId 0 = T-Rex).
-     */
     addBones(count = 1, dinoId = 0) {
         const newBones = [];
         for (let i = 0; i < count; i++) {
@@ -82,12 +68,6 @@ export class Museum {
         return newBones;
     }
 
-    /**
-     * Откатить кости, найденные за текущую попытку уровня — вызывается при
-     * поражении/выходе из незавершённого уровня (см. Game.js showEndModal(false)
-     * и pauseMenu*). Кости засчитываются в музей насовсем только при победе.
-     * @param {Array<{id:string}>} bones
-     */
     removeBones(bones = []) {
         if (!bones || bones.length === 0) return;
         let changed = false;
@@ -103,7 +83,20 @@ export class Museum {
         }
     }
 
-    // ─── Прогресс ────────────────────────────────────────────────────
+    restoreBones(bones = []) {
+        if (!bones || bones.length === 0) return;
+        let changed = false;
+        bones.forEach(b => {
+            if (b && !this.unlockedBones.has(b.id)) {
+                this.unlockedBones.add(b.id);
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.saveState();
+            this.render();
+        }
+    }
 
     getTotalUnlocked() {
         return this.unlockedBones.size;
@@ -154,14 +147,6 @@ export class Museum {
         this.render();
     }
 
-    // ─── Инициализация ────────────────────────────────────────────────
-
-    init() {
-        this.render();
-    }
-
-    // ─── Рендер ──────────────────────────────────────────────────────
-
     render() {
         if (!this.gridEl) return;
 
@@ -188,7 +173,6 @@ export class Museum {
             const complete = this.isDinoAssembled(dino.id);
             const btn = document.createElement('button');
             btn.className = `dino-tab-btn ${dino.id === this.activeDinoId ? 'active' : ''} ${complete ? 'complete' : ''}`;
-            btn.title = dino.name;
             btn.innerHTML = `
                 <span class="dino-tab-emoji">${dino.emoji}</span>
                 <span class="dino-tab-name">${dino.name.split(' ')[0]}</span>
@@ -212,7 +196,6 @@ export class Museum {
         const isComplete = unlocked >= total;
         const isAssembled = this.isDinoAssembled(dino.id);
 
-        // Заголовок динозавра
         const header = document.createElement('div');
         header.className = 'museum-dino-header';
         header.innerHTML = `
@@ -238,7 +221,6 @@ export class Museum {
             return;
         }
 
-        // Сетка костей (показывается и когда все кости найдены, но скелет ещё не собран игроком)
         const bonesGrid = document.createElement('div');
         bonesGrid.className = 'bones-slots-grid';
 
@@ -277,26 +259,9 @@ export class Museum {
             assembleBar.querySelector('#btnAssembleNow').addEventListener('click', () => {
                 this.assembleDino(dino.id);
             });
-            assembleBar.querySelector('#btnAssembleNow').addEventListener('click', () => {
-                this.assembledDinos.add(dino.id);
-                this.saveAssembledState();
-
-                const bridge = window.Bridge;
-                if (bridge) {
-                    bridge.gameplayStop();
-                    bridge.showInterstitial({
-                        onClose: () => { bridge.gameplayStart(); this.render(); },
-                        onError: () => { bridge.gameplayStart(); this.render(); },
-                        onOffline: () => { bridge.gameplayStart(); this.render(); }
-                    });
-                } else {
-                    this.render();
-                }
-            });
             this.gridEl.appendChild(assembleBar);
         }
 
-        // Инфо-карточка (скрытая по умолчанию)
         if (this.infoCard) this.infoCard.classList.add('hidden');
     }
 
@@ -306,8 +271,6 @@ export class Museum {
         if (this.boneNameEl) this.boneNameEl.textContent = `${bone.icon} ${bone.name}`;
         if (this.boneDescEl) this.boneDescEl.textContent = bone.fact;
     }
-
-    // ─── Собранный экспонат ────────────────────────────────────────────
 
     _onDinoAssembled(dinoId) {
         const dino = DINO_DATA[dinoId];
@@ -328,7 +291,9 @@ export class Museum {
         document.body.appendChild(modal);
 
         document.getElementById('btnStartAssemble').addEventListener('click', () => {
-            modal.remove();
+            modal.style.animation = 'fadeIn 0.2s ease reverse';
+            modal.style.opacity = '0';
+            setTimeout(() => modal.remove(), 200);
             this.activeDinoId = dinoId;
             this.render();
             window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));

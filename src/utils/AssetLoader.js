@@ -1,12 +1,5 @@
-// Простой загрузчик картинок с кэшем и fallback на эмодзи, если файл не найден.
-// Достаточно положить свою картинку по нужному пути (см. config.js -> ASSETS),
-// и она подхватится автоматически. Если файла нет — рисуется эмодзи, как раньше.
-
 const cache = new Map();
 
-/**
- * Инициирует загрузку картинки (если ещё не загружалась) и возвращает запись из кэша.
- */
 export function loadImage(path) {
     if (!path) return null;
     if (cache.has(path)) return cache.get(path);
@@ -19,10 +12,6 @@ export function loadImage(path) {
     return entry;
 }
 
-/**
- * Возвращает готовый к отрисовке Image, если он успешно загрузился, иначе null
- * (значит нужно рисовать эмодзи-заглушку).
- */
 export function getReadyImage(path) {
     if (!path) return null;
     const entry = loadImage(path);
@@ -30,9 +19,6 @@ export function getReadyImage(path) {
     return null;
 }
 
-/**
- * Хелпер для DOM: создаёт <img>, которая при ошибке загрузки сама подменяется на эмодзи.
- */
 export function createImgOrEmoji(path, emoji, className = '') {
     if (!path) {
         const span = document.createElement('span');
