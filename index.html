@@ -86,64 +86,36 @@
     </div>
 
     <div id="gameScreen" class="screen-view hidden">
+        <button id="btnPause" class="pause-btn game-pause-btn">
+            <span id="pauseIconSlot" class="icon-slot pause-icon-fallback" data-icon="pause">
+                <span class="pause-fallback-bar"></span>
+                <span class="pause-fallback-bar"></span>
+            </span>
+        </button>
+
         <div id="gameScaleWrap" class="game-scale-wrap">
-        <div id="ui">
-            <div class="game-topbar">
-                <button id="btnPause" class="pause-btn">
-                    <span id="pauseIconSlot" class="icon-slot pause-icon-fallback" data-icon="pause">
-                        <span class="pause-fallback-bar"></span>
-                        <span class="pause-fallback-bar"></span>
-                    </span>
-                </button>
-            </div>
-            
-            <div class="museum-bar">
-                <span id="currentDinoEmoji">🦴</span>
-                <span><span id="museumBarLabel" data-i18n="museumBarLabel">Кости</span> <b id="currentDinoName">—</b>: <b id="museumCount">0</b>/<span id="museumTotal">10</span></span>
-                <div class="progress-bg"><div id="museumProgress" class="progress-fill"></div></div>
-            </div>
 
-            <div class="level-hud">
-                <div class="level-badge">
-                    <span class="level-badge-icon" id="levelTypeIcon">⛏️</span>
-                    <div class="level-badge-text">
-                        <span class="level-badge-label" id="levelBadgeLabel" data-i18n="levelBadgeLabel">Уровень</span>
-                        <span class="level-badge-num" id="levelNumber">1</span>
-                    </div>
-                </div>
+        <div class="museum-bar">
+            <span id="currentDinoEmoji">🦴</span>
+            <span><span id="museumBarLabel" data-i18n="museumBarLabel">Кости</span> <b id="currentDinoName">—</b>: <b id="museumCount">0</b>/<span id="museumTotal">10</span></span>
+            <div class="progress-bg"><div id="museumProgress" class="progress-fill"></div></div>
+        </div>
 
-                <div class="goal-card">
-                    <div class="goal-card-top">
-                        <span class="goal-icon" id="goalIcon">🦴</span>
-                        <span class="goal-label" id="goalLabel">Раскопай кости</span>
-                        <span class="goal-value" id="goalText">0/0</span>
-                    </div>
-                    <div class="goal-bar-wrap"><div class="goal-bar-fill" id="goalBarFill"></div></div>
-                </div>
+        <div class="level-badge">
+            <span class="level-badge-icon" id="levelTypeIcon">⛏️</span>
+            <div class="level-badge-text">
+                <span class="level-badge-label" id="levelBadgeLabel" data-i18n="levelBadgeLabel">Уровень</span>
+                <span class="level-badge-num" id="levelNumber">1</span>
             </div>
+        </div>
 
-            <div class="stats-chips">
-                <div class="chip chip-moves" id="chipMoves" data-tooltip-trigger>
-                    <span class="chip-icon">👣</span>
-                    <span class="chip-value" id="moves">20</span>
-                </div>
-                <button id="btnAddMoves" class="chip-add-btn" data-tooltip-trigger>
-                    <span class="icon-slot" data-icon="addMoves">+</span>
-                </button>
-                <div class="chip chip-score" id="chipScore" data-tooltip-trigger>
-                    <span class="chip-icon">⭐</span>
-                    <span class="chip-value" id="score">0</span>
-                </div>
-                <div class="chip chip-tools" id="chipTools" data-tooltip-trigger>
-                    <span class="chip-icon">🧰</span>
-                    <span class="chip-value" id="tools">0</span>
-                </div>
+        <div class="goal-card">
+            <div class="goal-card-top">
+                <span class="goal-icon" id="goalIcon">🦴</span>
+                <span class="goal-label" id="goalLabel">Раскопай кости</span>
+                <span class="goal-value" id="goalText">0/0</span>
             </div>
-
-            <div class="boosters">
-                <button id="btnPickaxe" class="booster-btn" draggable="true" data-tool="pickaxe" data-tooltip-trigger><span id="pickaxeLabel" data-i18n="pickaxeLabel">⛏️ Кирка (1)</span></button>
-                <button id="btnDynamite" class="booster-btn" draggable="true" data-tool="dynamite" data-tooltip-trigger><span id="dynamiteLabel" data-i18n="dynamiteLabel">🧨 Динамит (2)</span></button>
-            </div>
+            <div class="goal-bar-wrap"><div class="goal-bar-fill" id="goalBarFill"></div></div>
         </div>
 
         <div class="game-container">
@@ -175,6 +147,32 @@
                 </div>
             </div>
         </div>
+
+        <div class="stats-chips">
+            <div class="chip-moves-row">
+                <div class="chip chip-moves" id="chipMoves" data-tooltip-trigger>
+                    <span class="chip-icon">👣</span>
+                    <span class="chip-value" id="moves">20</span>
+                </div>
+                <button id="btnAddMoves" class="chip-add-btn" data-tooltip-trigger>
+                    <span class="icon-slot" data-icon="addMoves">+</span>
+                </button>
+            </div>
+            <div class="chip chip-score" id="chipScore" data-tooltip-trigger>
+                <span class="chip-icon">⭐</span>
+                <span class="chip-value" id="score">0</span>
+            </div>
+            <div class="chip chip-tools" id="chipTools" data-tooltip-trigger>
+                <span class="chip-icon">🧰</span>
+                <span class="chip-value" id="tools">0</span>
+            </div>
+        </div>
+
+        <div class="boosters">
+
+                <button id="btnPickaxe" class="booster-btn" draggable="true" data-tool="pickaxe" data-tooltip-trigger><span id="pickaxeLabel" data-i18n="pickaxeLabel">⛏️ Кирка (1)</span></button>
+                <button id="btnDynamite" class="booster-btn" draggable="true" data-tool="dynamite" data-tooltip-trigger><span id="dynamiteLabel" data-i18n="dynamiteLabel">🧨 Динамит (2)</span></button>
+            </div>
         </div>
     </div>
 
