@@ -270,6 +270,7 @@ export class Museum {
         this.infoCard.classList.remove('hidden');
         if (this.boneNameEl) this.boneNameEl.textContent = `${bone.icon} ${bone.name}`;
         if (this.boneDescEl) this.boneDescEl.textContent = bone.fact;
+        this.infoCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     _onDinoAssembled(dinoId) {

@@ -13,6 +13,10 @@ html {
     -webkit-tap-highlight-color: transparent;
 }
 
+.hidden {
+    display: none !important;
+}
+
 body {
     background-color: #0b0704;
     background-image:
@@ -46,21 +50,25 @@ body {
 }
 
 .game-pause-btn {
-    position: fixed;
-    top: 12px;
-    left: 14px;
-    z-index: 200;
+    grid-area: pause;
+    justify-self: start;
+}
+
+.game-settings-btn {
+    grid-area: settings;
+    justify-self: end;
 }
 
 .game-scale-wrap {
     display: grid;
     grid-template-columns: 200px auto 200px;
     grid-template-areas:
+        "pause  canvas settings"
         "museum canvas goal"
         "level  canvas chips"
         ".      canvas boosters";
-    column-gap: 16px;
-    row-gap: 10px;
+    column-gap: 20px;
+    row-gap: 14px;
     align-items: start;
     justify-items: stretch;
     transform-origin: top center;
@@ -73,6 +81,12 @@ body {
 .stats-chips { grid-area: chips; }
 .boosters { grid-area: boosters; }
 
+.museum-bar,
+.level-badge,
+.goal-card {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+
 .stats-chips {
     display: flex;
     flex-direction: column;
@@ -82,6 +96,7 @@ body {
 .chip {
     width: 100%;
     justify-content: center;
+    border-radius: 16px;
 }
 
 .chip-moves-row {
@@ -101,6 +116,20 @@ body {
 }
 
 @media (max-aspect-ratio: 3/4) {
+    .game-pause-btn {
+        position: fixed;
+        top: 12px;
+        left: 14px;
+        z-index: 200;
+    }
+
+    .game-settings-btn {
+        position: fixed;
+        top: 12px;
+        right: 14px;
+        z-index: 200;
+    }
+
     .game-scale-wrap {
         grid-template-columns: auto 1fr;
         grid-template-areas:
@@ -109,7 +138,8 @@ body {
             "chips    chips"
             "boosters boosters"
             "canvas   canvas";
-        row-gap: 10px;
+        row-gap: 12px;
+        padding: 56px 14px 0;
     }
 
     .level-badge {
@@ -216,11 +246,11 @@ h1 {
 
 .goal-card {
     flex: 1;
-    min-width: 180px;
+    min-width: 0;
     background: #1e130a;
     border: 2px solid #3d2817;
     border-radius: 14px;
-    padding: 8px 14px;
+    padding: 10px 16px;
 }
 
 .goal-card-top {
