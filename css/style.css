@@ -13,6 +13,10 @@ html {
     -webkit-tap-highlight-color: transparent;
 }
 
+.hidden {
+    display: none !important;
+}
+
 body {
     background-color: #0b0704;
     background-image:
@@ -45,16 +49,123 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
-#ui {
+.game-pause-btn {
+    grid-area: pause;
+    justify-self: start;
+}
+
+.game-settings-btn {
+    grid-area: settings;
+    justify-self: end;
+}
+
+.game-scale-wrap {
+    display: grid;
+    grid-template-columns: 200px auto 200px;
+    grid-template-areas:
+        "pause  canvas settings"
+        "museum canvas goal"
+        "level  canvas chips"
+        ".      canvas boosters";
+    column-gap: 20px;
+    row-gap: 14px;
+    align-items: start;
+    justify-items: stretch;
+    transform-origin: top center;
+}
+
+.museum-bar { grid-area: museum; }
+.level-badge { grid-area: level; }
+.goal-card { grid-area: goal; }
+.game-container { grid-area: canvas; }
+.stats-chips { grid-area: chips; }
+.boosters { grid-area: boosters; }
+
+.museum-bar,
+.level-badge,
+.goal-card {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+
+.stats-chips {
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 10px;
-    margin-bottom: 12px;
+}
+
+.chip {
     width: 100%;
-    max-width: 548px;
-    padding: 0 8px;
-    box-sizing: border-box;
+    justify-content: center;
+    border-radius: 16px;
+}
+
+.chip-moves-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chip-moves-row .chip {
+    flex: 1;
+}
+
+.boosters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+@media (max-aspect-ratio: 3/4) {
+    .game-pause-btn {
+        position: fixed;
+        top: 12px;
+        left: 14px;
+        z-index: 200;
+    }
+
+    .game-settings-btn {
+        position: fixed;
+        top: 12px;
+        right: 14px;
+        z-index: 200;
+    }
+
+    .game-scale-wrap {
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "museum   museum"
+            "level    goal"
+            "chips    chips"
+            "boosters boosters"
+            "canvas   canvas";
+        row-gap: 12px;
+        padding: 56px 14px 0;
+    }
+
+    .level-badge {
+        width: auto;
+    }
+
+    .goal-card {
+        width: 100%;
+    }
+
+    .stats-chips {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .chip {
+        width: auto;
+        flex: 1;
+    }
+
+    .boosters {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 
 h1 {
@@ -99,14 +210,6 @@ h1 {
     gap: 8px;
 }
 
-.level-hud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    width: 100%;
-    max-width: 520px;
-}
-
 .level-badge {
     display: flex;
     align-items: center;
@@ -143,11 +246,11 @@ h1 {
 
 .goal-card {
     flex: 1;
-    min-width: 180px;
+    min-width: 0;
     background: #1e130a;
     border: 2px solid #3d2817;
     border-radius: 14px;
-    padding: 8px 14px;
+    padding: 10px 16px;
 }
 
 .goal-card-top {
@@ -293,6 +396,7 @@ h1 {
 }
 
 .game-container {
+    grid-area: canvas;
     position: relative;
     width: 100%;
     max-width: 548px;
@@ -522,13 +626,6 @@ canvas {
     justify-content: flex-start;
 }
 
-.game-scale-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transform-origin: top center;
-}
-
 .screen-view:not(.hidden) {
     animation: screenFadeIn 0.32s ease;
 }
@@ -638,12 +735,6 @@ canvas {
     40%  { transform: scale(1.35) rotate(-8deg); }
     70%  { transform: scale(0.95) rotate(4deg); }
     100% { transform: scale(1) rotate(0deg); }
-}
-
-.game-topbar {
-    display: flex;
-    align-items: center;
-    width: 100%;
 }
 
 .pause-btn {

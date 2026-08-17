@@ -24,6 +24,7 @@ const gameScreen = document.getElementById('gameScreen');
 const mapScreen = document.getElementById('mapScreen');
 const museumScreen = document.getElementById('museumScreen');
 const gameScaleWrap = document.getElementById('gameScaleWrap');
+const mainNav = document.querySelector('.main-nav');
 
 function fitGameScreen() {
     if (!gameScaleWrap || !gameScreen || gameScreen.classList.contains('hidden')) return;
@@ -57,6 +58,7 @@ function openGame() {
     gameScreen?.classList.remove('hidden');
     mapScreen?.classList.add('hidden');
     museumScreen?.classList.add('hidden');
+    mainNav?.classList.add('hidden');
     setNavLocked(true);
     fitGameScreen();
 }
@@ -67,6 +69,7 @@ function openMap() {
     mapScreen?.classList.remove('hidden');
     gameScreen?.classList.add('hidden');
     museumScreen?.classList.add('hidden');
+    mainNav?.classList.remove('hidden');
     setNavLocked(false);
     levelMap.render();
 }
@@ -77,6 +80,7 @@ function openMuseum() {
     museumScreen?.classList.remove('hidden');
     gameScreen?.classList.add('hidden');
     mapScreen?.classList.add('hidden');
+    mainNav?.classList.remove('hidden');
     setNavLocked(false);
     museum.render();
 }
@@ -118,14 +122,18 @@ function refreshLanguage() {
 }
 
 const btnSettings = document.getElementById('btnSettings');
+const btnSettingsGame = document.getElementById('btnSettingsGame');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const btnSettingsClose = document.getElementById('btnSettingsClose');
 const btnLangToggle = document.getElementById('btnLangToggle');
 
-btnSettings?.addEventListener('click', () => {
+function openSettings() {
     openOverlay(settingsOverlay);
     game.pause();
-});
+}
+
+btnSettings?.addEventListener('click', openSettings);
+btnSettingsGame?.addEventListener('click', openSettings);
 
 function closeSettings() {
     closeOverlay(settingsOverlay);
