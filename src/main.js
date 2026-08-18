@@ -214,24 +214,27 @@ setDinoLanguage(getLang());
 applyStaticTranslations();
 updateLangButtons();
 
+function mountIconSlot(slot) {
+    const key = slot.dataset.icon;
+    const path = key && ASSETS.uiIcons[key];
+    if (!path) return;
+    const probe = new Image();
+    probe.onload = () => {
+        const img = document.createElement('img');
+        img.src = path;
+        img.alt = '';
+        img.className = 'ui-icon-img';
+        slot.replaceChildren(img);
+    };
+    probe.src = path;
+}
+
 function mountAllIcons() {
-    document.querySelectorAll('[data-icon]').forEach(slot => {
-        const key = slot.dataset.icon;
-        const path = key && ASSETS.uiIcons[key];
-        if (!path) return;
-        const probe = new Image();
-        probe.onload = () => {
-            const img = document.createElement('img');
-            img.src = path;
-            img.alt = '';
-            img.className = 'ui-icon-img';
-            slot.replaceChildren(img);
-        };
-        probe.src = path;
-    });
+    document.querySelectorAll('[data-icon]').forEach(mountIconSlot);
 }
 
 mountAllIcons();
+window.__mountIconSlot = mountIconSlot;
 
 (function initCustomBackground() {
     const layer = document.getElementById('customBgLayer');

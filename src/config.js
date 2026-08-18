@@ -50,28 +50,28 @@ export const ASSETS = {
     dinoAlive: (dinoId) => `assets/dinos/${dinoId}-alive.png`,
 
     uiIcons: {
-        pause: 'assets/ui/pause.png',
-        settings: 'assets/ui/settings.png',
-        map: 'assets/ui/map.png',
-        museum: 'assets/ui/museum.png',
-        resume: 'assets/ui/resume.png',
-        restart: 'assets/ui/restart.png',
-        giveUp: 'assets/ui/give_up.png',
-        confirm: 'assets/ui/confirm.png',
-        confirmOk: 'assets/ui/confirm_ok.png',
-        confirmCancel: 'assets/ui/confirm_cancel.png',
-        modalNext: 'assets/ui/modal_next.png',
-        modalRetry: 'assets/ui/modal_retry.png',
-        modalMuseum: 'assets/ui/modal_museum.png',
-        modalHome: 'assets/ui/modal_home.png',
-        addMoves: 'assets/ui/add_moves.png',
-        addTools: 'assets/ui/add_tools.png',
-        watchAd: 'assets/ui/watch_ad.png'
+        pause: 'assets/ui/pause.svg',
+        settings: 'assets/ui/settings.svg',
+        map: 'assets/ui/map.svg',
+        museum: 'assets/ui/museum.svg',
+        resume: 'assets/ui/resume.svg',
+        restart: 'assets/ui/restart.svg',
+        giveUp: 'assets/ui/give_up.svg',
+        confirm: 'assets/ui/confirm.svg',
+        confirmOk: 'assets/ui/confirm_ok.svg',
+        confirmCancel: 'assets/ui/confirm_cancel.svg',
+        modalNext: 'assets/ui/modal_next.svg',
+        modalRetry: 'assets/ui/modal_retry.svg',
+        modalMuseum: 'assets/ui/modal_museum.svg',
+        modalHome: 'assets/ui/modal_home.svg',
+        addMoves: 'assets/ui/add_moves.svg',
+        addTools: 'assets/ui/add_tools.svg',
+        watchAd: 'assets/ui/watch_ad.svg'
     },
 
-    levelTypeIcon: (type) => `assets/ui/level_type_${type}.png`,
+    levelTypeIcon: (type) => `assets/ui/level_type_${type}.svg`,
 
-    background: 'assets/ui/background.jpg'
+    background: null
 };
 
 const BONE_NAME_TEMPLATE = {

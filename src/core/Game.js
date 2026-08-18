@@ -87,6 +87,7 @@ export class Game {
             modalDesc: document.getElementById('modalDesc'),
             modalScore: document.getElementById('modalScore'),
             btnModalNext: document.getElementById('btnModalNext'),
+            modalNextIconSlot: document.getElementById('modalNextIconSlot'),
             btnModalMuseum: document.getElementById('btnModalMuseum'),
             btnModalHome: document.getElementById('btnModalHome'),
             btnModalWatchAd: document.getElementById('btnModalWatchAd'),
@@ -525,8 +526,10 @@ export class Game {
             }
 
             this.ui.modalDesc.innerHTML = desc;
-            if (this.ui.btnModalNext) {
-                this.ui.btnModalNext.textContent = '▶️';
+            if (this.ui.modalNextIconSlot) {
+                this.ui.modalNextIconSlot.dataset.icon = 'modalNext';
+                this.ui.modalNextIconSlot.textContent = '▶️';
+                if (window.__mountIconSlot) window.__mountIconSlot(this.ui.modalNextIconSlot);
             }
             if (this.ui.btnModalMuseum) {
                 this.ui.btnModalMuseum.style.display = 'inline-flex';
@@ -545,8 +548,10 @@ export class Game {
             if (this.ui.modalIconBadge) this.ui.modalIconBadge.textContent = '⛔';
             this.ui.modalTitle.textContent = t('modalLoseTitle');
             this.ui.modalDesc.textContent = t('modalLoseDesc');
-            if (this.ui.btnModalNext) {
-                this.ui.btnModalNext.textContent = '🔄';
+            if (this.ui.modalNextIconSlot) {
+                this.ui.modalNextIconSlot.dataset.icon = 'modalRetry';
+                this.ui.modalNextIconSlot.textContent = '🔄';
+                if (window.__mountIconSlot) window.__mountIconSlot(this.ui.modalNextIconSlot);
             }
             if (this.ui.btnModalMuseum) {
                 this.ui.btnModalMuseum.style.display = 'none';

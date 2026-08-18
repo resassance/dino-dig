@@ -181,27 +181,27 @@ export class BoardRenderer {
 
         } else if (tile.bonus && tile.bonus !== BONUS_TYPE.NONE) {
 
-            ctx.fillStyle = 'rgba(0,0,0,0.35)';
-            this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
-            ctx.fill();
-
-            const grad = ctx.createLinearGradient(tx, ty, tx, ty + drawSize);
-            grad.addColorStop(0, '#3a3560');
-            grad.addColorStop(1, '#1c1a33');
-            ctx.fillStyle = grad;
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
-            ctx.fill();
-
-            ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 2;
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
-            ctx.stroke();
-
             const sprite = getReadyImage(ASSETS.bonusSprites[tile.bonus]);
             if (sprite) {
-                const bp = drawSize * 0.2;
+                const bp = drawSize * 0.06;
                 ctx.drawImage(sprite, tx + bp, ty + bp, drawSize - bp * 2, drawSize - bp * 2);
             } else {
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
+                ctx.fill();
+
+                const grad = ctx.createLinearGradient(tx, ty, tx, ty + drawSize);
+                grad.addColorStop(0, '#3a3560');
+                grad.addColorStop(1, '#1c1a33');
+                ctx.fillStyle = grad;
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.fill();
+
+                ctx.strokeStyle = '#ffd700';
+                ctx.lineWidth = 2;
+                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                ctx.stroke();
+
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 18px sans-serif';
                 ctx.textAlign = 'center';
