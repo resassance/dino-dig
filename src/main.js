@@ -1,7 +1,7 @@
 import { Game } from './core/Game.js';
 import { Museum } from './core/Museum.js';
 import { LevelMap } from './core/LevelMap.js';
-import { setDinoLanguage, ASSETS, COLOR_KEYS } from './config.js';
+import { setDinoLanguage, ASSETS, COLOR_KEYS, DINO_DATA } from './config.js';
 import { t, getLang, setLang, onLangChange, applyEnvLanguage } from './i18n.js';
 import { loadImage } from './utils/AssetLoader.js';
 import { openOverlay, closeOverlay } from './utils/overlay.js';
@@ -18,6 +18,15 @@ window.prompt = () => null;
 COLOR_KEYS.forEach(key => loadImage(ASSETS.tileSprite(key)));
 Object.values(ASSETS.bonusSprites).forEach(path => loadImage(path));
 loadImage(ASSETS.fossilTileSprite);
+
+// Preload every museum asset (bone icons + skeleton/alive artwork for each
+// dino) up front too, so opening the museum never shows fossils popping in
+// top-to-bottom while their images are still downloading.
+Object.values(DINO_DATA).forEach(dino => {
+    loadImage(ASSETS.dinoSkeleton(dino.id));
+    loadImage(ASSETS.dinoAlive(dino.id));
+    dino.bones.forEach(bone => loadImage(ASSETS.boneIcon(bone.id)));
+});
 
 // Localize dino text (names, latinName, description, etc.) BEFORE anything
 // renders. Museum's constructor renders immediately, so if this ran later
