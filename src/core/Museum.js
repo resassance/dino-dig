@@ -40,7 +40,7 @@ export class Museum {
         localStorage.setItem('dino_museum_assembled_v1', JSON.stringify([...this.assembledDinos]));
     }
 
-    addBoneForDino(dinoId) {
+    addBoneForDino(dinoId, { render = true } = {}) {
         const dino = DINO_DATA[dinoId];
         if (!dino) return [];
 
@@ -49,7 +49,7 @@ export class Museum {
 
         this.unlockedBones.add(nextBone.id);
         this.saveState();
-        this.render();
+        if (render) this.render();
 
         const assembled = dino.bones.every(b => this.unlockedBones.has(b.id));
         if (assembled) {
@@ -62,9 +62,13 @@ export class Museum {
     addBones(count = 1, dinoId = 0) {
         const newBones = [];
         for (let i = 0; i < count; i++) {
-            const added = this.addBoneForDino(dinoId);
+            // Only re-render the DOM once for the whole batch instead of
+            // once per bone — collecting several fossils in one match used
+            // to rebuild the museum grid N times in a single frame.
+            const added = this.addBoneForDino(dinoId, { render: false });
             newBones.push(...added);
         }
+        if (newBones.length > 0) this.render();
         return newBones;
     }
 
@@ -133,11 +137,14 @@ export class Museum {
         const bridge = window.Bridge;
         if (bridge) {
             bridge.gameplayStop();
-            bridge.showInterstitial({
-                onClose: () => { bridge.gameplayStart(); this.render(); },
-                onError: () => { bridge.gameplayStart(); this.render(); },
-                onOffline: () => { bridge.gameplayStart(); this.render(); }
+            const finish = () => { bridge.gameplayStart(); this.render(); };
+            const requested = bridge.showInterstitial({
+                onClose: finish,
+                onError: finish,
+                onOffline: finish
             });
+
+            if (!requested) finish();
         } else {
             this.render();
         }
@@ -174,10 +181,16 @@ export class Museum {
             const btn = document.createElement('button');
             btn.className = `dino-tab-btn ${dino.id === this.activeDinoId ? 'active' : ''} ${complete ? 'complete' : ''}`;
             btn.innerHTML = `
-                <span class="dino-tab-emoji">${dino.emoji}</span>
+                <span class="dino-tab-emoji"></span>
                 <span class="dino-tab-name">${dino.name.split(' ')[0]}</span>
                 <span class="dino-tab-count">${unlocked}/${total}</span>
             `;
+
+            // Show the dino's "alive" artwork in the selector even before
+            // every bone has been found, instead of the static emoji.
+            const emojiSlot = btn.querySelector('.dino-tab-emoji');
+            emojiSlot.appendChild(createImgOrEmoji(ASSETS.dinoAlive(dino.id), dino.emoji, 'dino-tab-icon-img'));
+
             btn.addEventListener('click', () => {
                 this.activeDinoId = dino.id;
                 this.render();

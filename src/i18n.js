@@ -21,6 +21,7 @@ function loadStoredLang() {
     return null;
 }
 
+const hadStoredLang = loadStoredLang() !== null;
 let currentLang = loadStoredLang() || detectDefaultLang();
 
 export function getLang() {
@@ -34,6 +35,20 @@ export function setLang(lang) {
     try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) {  }
     document.documentElement.lang = lang;
     listeners.forEach(cb => cb(lang));
+}
+
+export function applyEnvLanguage() {
+    if (hadStoredLang) return;
+    try {
+        const bridge = window.Bridge;
+        if (!bridge) return;
+        const envLang = bridge.getEnvLanguage();
+        if ((envLang === 'ru' || envLang === 'en') && envLang !== currentLang) {
+            currentLang = envLang;
+            document.documentElement.lang = envLang;
+            listeners.forEach(cb => cb(envLang));
+        }
+    } catch (e) {  }
 }
 
 export function onLangChange(cb) {

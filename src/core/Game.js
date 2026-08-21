@@ -25,19 +25,20 @@ export class Game {
     constructor(canvas, museum = null) {
         this.canvas = canvas;
 
-        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
         this.canvas.width = CONFIG.CANVAS_WIDTH * dpr;
         this.canvas.height = CONFIG.CANVAS_HEIGHT * dpr;
 
         this.ctx = canvas.getContext('2d');
         this.ctx.scale(dpr, dpr);
         this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = 'high';
+        this.ctx.imageSmoothingQuality = 'medium';
         this.museum = museum;
         this.levelMap = null;
+        this.gameScreenEl = document.getElementById('gameScreen');
         this.grid = new Grid();
         this.digLayer = new DigLayer();
-        this.renderer = new BoardRenderer(this.ctx);
+        this.renderer = new BoardRenderer(this.ctx, dpr);
 
         this.input = new InputManager(
             canvas,
@@ -176,12 +177,16 @@ export class Game {
         this.loadLevel(type, tier);
     }
 
-    loadNextLevel() {
+    _advanceLevelProgress() {
         this.levelNumber++;
         if (this.levelNumber > this.highestLevelReached) {
             this.highestLevelReached = this.levelNumber;
         }
         this._saveProgress();
+    }
+
+    loadNextLevel() {
+        this._advanceLevelProgress();
         this.loadLevelByNumber(this.levelNumber);
     }
 
@@ -228,7 +233,9 @@ export class Game {
         if (this.ui.btnModalMuseum) {
             this.ui.btnModalMuseum.addEventListener('click', () => {
                 closeOverlay(this.ui.modalOverlay);
+                const wasVictory = this.state === STATE.VICTORY;
                 this.showAdThenRun(() => {
+                    if (wasVictory) this._advanceLevelProgress();
                     window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));
                 });
             });
@@ -237,7 +244,9 @@ export class Game {
         if (this.ui.btnModalHome) {
             this.ui.btnModalHome.addEventListener('click', () => {
                 closeOverlay(this.ui.modalOverlay);
+                const wasVictory = this.state === STATE.VICTORY;
                 this.showAdThenRun(() => {
+                    if (wasVictory) this._advanceLevelProgress();
                     window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
                 });
             });
@@ -647,7 +656,8 @@ export class Game {
     }
 
     loop() {
-        if (!this.paused) {
+        const isVisible = this.gameScreenEl && !this.gameScreenEl.classList.contains('hidden');
+        if (!this.paused && isVisible) {
             this.update();
             if (this.renderer && this.grid) {
                 this.renderer.draw(this.grid, this.input.selected, this.digLayer);
