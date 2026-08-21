@@ -50,28 +50,28 @@ export const ASSETS = {
     dinoAlive: (dinoId) => `assets/dinos/${dinoId}-alive.png`,
 
     uiIcons: {
-        pause: 'assets/ui/pause.png',
-        settings: 'assets/ui/settings.png',
-        map: 'assets/ui/map.png',
-        museum: 'assets/ui/museum.png',
-        resume: 'assets/ui/resume.png',
-        restart: 'assets/ui/restart.png',
-        giveUp: 'assets/ui/give_up.png',
-        confirm: 'assets/ui/confirm.png',
-        confirmOk: 'assets/ui/confirm_ok.png',
-        confirmCancel: 'assets/ui/confirm_cancel.png',
-        modalNext: 'assets/ui/modal_next.png',
-        modalRetry: 'assets/ui/modal_retry.png',
-        modalMuseum: 'assets/ui/modal_museum.png',
-        modalHome: 'assets/ui/modal_home.png',
-        addMoves: 'assets/ui/add_moves.png',
-        addTools: 'assets/ui/add_tools.png',
-        watchAd: 'assets/ui/watch_ad.png'
+        pause: 'assets/ui/pause.svg',
+        settings: 'assets/ui/settings.svg',
+        map: 'assets/ui/map.svg',
+        museum: 'assets/ui/museum.svg',
+        resume: 'assets/ui/resume.svg',
+        restart: 'assets/ui/restart.svg',
+        giveUp: 'assets/ui/give_up.svg',
+        confirm: 'assets/ui/confirm.svg',
+        confirmOk: 'assets/ui/confirm_ok.svg',
+        confirmCancel: 'assets/ui/confirm_cancel.svg',
+        modalNext: 'assets/ui/modal_next.svg',
+        modalRetry: 'assets/ui/modal_retry.svg',
+        modalMuseum: 'assets/ui/modal_museum.svg',
+        modalHome: 'assets/ui/modal_home.svg',
+        addMoves: 'assets/ui/add_moves.svg',
+        addTools: 'assets/ui/add_tools.svg',
+        watchAd: 'assets/ui/watch_ad.svg'
     },
 
-    levelTypeIcon: (type) => `assets/ui/level_type_${type}.png`,
+    levelTypeIcon: (type) => `assets/ui/level_type_${type}.svg`,
 
-    background: 'assets/ui/background.jpg'
+    background: null
 };
 
 const BONE_NAME_TEMPLATE = {
@@ -237,6 +237,7 @@ function snapshotDinoFacts(source) {
         const d = source[id];
         snap[id] = {
             name: d.name,
+            latinName: d.latinName,
             description: d.description,
             period: d.period,
             length: d.length,
@@ -249,9 +250,17 @@ function snapshotDinoFacts(source) {
 
 const DINO_TEXT_RU = snapshotDinoFacts(DINO_DATA);
 
+Object.keys(DINO_TEXT_RU).forEach(id => {
+    // In Russian, show the localized dinosaur name where a "Latin name"
+    // would appear (e.g. "Трицератопс"), not the actual Latin/scientific
+    // name — that's reserved for the English version.
+    DINO_TEXT_RU[id].latinName = DINO_TEXT_RU[id].name;
+});
+
 const DINO_TEXT_EN = {
     0: {
         name: 'Tyrannosaurus Rex',
+        latinName: 'Tyrannosaurus Rex',
         description: 'One of the largest land predators in Earth\u2019s history.',
         period: 'Late Cretaceous (68\u201366 million years ago)',
         length: '12 m',
@@ -271,6 +280,7 @@ const DINO_TEXT_EN = {
     },
     1: {
         name: 'Stegosaurus',
+        latinName: 'Stegosaurus',
         description: 'Famous for the bony plates and spikes along its back and tail.',
         period: 'Late Jurassic (155\u2013150 million years ago)',
         length: '9 m',
@@ -290,6 +300,7 @@ const DINO_TEXT_EN = {
     },
     2: {
         name: 'Brachiosaurus',
+        latinName: 'Brachiosaurus',
         description: 'One of the tallest and heaviest dinosaurs, feeding on leaves high in the trees.',
         period: 'Late Jurassic (154\u2013153 million years ago)',
         length: '22 m',
@@ -309,6 +320,7 @@ const DINO_TEXT_EN = {
     },
     3: {
         name: 'Velociraptor',
+        latinName: 'Velociraptor',
         description: 'A fast, intelligent predator made famous by the movie "Jurassic Park".',
         period: 'Late Cretaceous (75\u201371 million years ago)',
         length: '2 m',
@@ -328,6 +340,7 @@ const DINO_TEXT_EN = {
     },
     4: {
         name: 'Triceratops',
+        latinName: 'Triceratops',
         description: 'A plant-eating dinosaur with three horns and a large bony frill.',
         period: 'Late Cretaceous (68\u201366 million years ago)',
         length: '9 m',
@@ -347,6 +360,7 @@ const DINO_TEXT_EN = {
     },
     5: {
         name: 'Pterodactylus',
+        latinName: 'Pterodactylus',
         description: 'A flying reptile \u2014 one of the first pterosaurs ever discovered.',
         period: 'Late Jurassic (150\u2013148 million years ago)',
         length: '1 m (1.5 m wingspan)',
@@ -374,6 +388,7 @@ export function setDinoLanguage(lang) {
         if (!src) return;
         const target = DINO_DATA[id];
         target.name = src.name;
+        target.latinName = src.latinName;
         target.description = src.description;
         target.period = src.period;
         target.length = src.length;

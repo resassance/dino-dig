@@ -79,8 +79,14 @@
             <h2 data-i18n="pauseConfirmTitle">Точно?</h2>
             <p id="pauseConfirmDesc" data-i18n="pauseConfirmDesc">Прогресс этой попытки уровня будет потерян.</p>
             <div class="modal-btn-row">
-                <button id="btnPauseConfirmCancel" class="pause-confirm-btn pause-confirm-btn-cancel" data-i18n="pauseConfirmCancel">Отмена</button>
-                <button id="btnPauseConfirmOk" class="pause-confirm-btn pause-confirm-btn-ok" data-i18n="pauseConfirmOk">Да</button>
+                <button id="btnPauseConfirmCancel" class="pause-confirm-btn pause-confirm-btn-cancel">
+                    <span class="icon-slot" data-icon="confirmCancel">✖️</span>
+                    <span data-i18n="pauseConfirmCancel">Отмена</span>
+                </button>
+                <button id="btnPauseConfirmOk" class="pause-confirm-btn pause-confirm-btn-ok">
+                    <span class="icon-slot" data-icon="confirmOk">✔️</span>
+                    <span data-i18n="pauseConfirmOk">Да</span>
+                </button>
             </div>
         </div>
     </div>
@@ -139,7 +145,9 @@
                         <button id="btnModalMuseum" class="modal-icon-btn">
                             <span class="icon-slot" data-icon="modalMuseum">🏛️</span>
                         </button>
-                        <button id="btnModalNext" class="modal-icon-btn modal-icon-btn-main">▶️</button>
+                        <button id="btnModalNext" class="modal-icon-btn modal-icon-btn-main">
+                            <span id="modalNextIconSlot" class="icon-slot" data-icon="modalNext">▶️</span>
+                        </button>
                         <button id="btnModalHome" class="modal-icon-btn">
                             <span class="icon-slot" data-icon="modalHome">🏠</span>
                         </button>

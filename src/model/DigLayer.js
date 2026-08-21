@@ -7,6 +7,10 @@ export class DigLayer {
         this.rows = CONFIG.ROWS;
         this.layer = [];
         this.buriedFossils = [];
+        // Bumped every time the layer/fossil state actually changes, so
+        // BoardRenderer can tell whether its cached background bitmap
+        // is still valid instead of redrawing it every frame.
+        this.version = 0;
     }
 
     init(defaultDepth = 2, fossilParam = 4) {
@@ -40,6 +44,8 @@ export class DigLayer {
                 }
             }
         }
+
+        this.version++;
     }
 
     get(c, r) {
@@ -51,6 +57,7 @@ export class DigLayer {
         if (r < 0 || r >= this.rows || c < 0 || c >= this.cols) return false;
         if (this.layer[r][c] > 0) {
             this.layer[r][c]--;
+            this.version++;
             if (this.layer[r][c] === 0 && this.buriedFossils[r][c]) {
                 this.buriedFossils[r][c] = false;
                 return true;

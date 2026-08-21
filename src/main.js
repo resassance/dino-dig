@@ -1,8 +1,8 @@
 import { Game } from './core/Game.js';
 import { Museum } from './core/Museum.js';
 import { LevelMap } from './core/LevelMap.js';
-import { setDinoLanguage, ASSETS } from './config.js';
-import { t, getLang, setLang, onLangChange } from './i18n.js';
+import { setDinoLanguage, ASSETS, COLOR_KEYS } from './config.js';
+import { t, getLang, setLang, onLangChange, applyEnvLanguage } from './i18n.js';
 import { loadImage } from './utils/AssetLoader.js';
 import { openOverlay, closeOverlay } from './utils/overlay.js';
 
@@ -11,6 +11,20 @@ document.addEventListener('dragstart', e => e.preventDefault());
 window.alert = () => {};
 window.confirm = () => false;
 window.prompt = () => null;
+
+// Preload the sprites the board draws for every level (colors, bonuses,
+// fossils) so the canvas never has to fall back to placeholder shapes
+// while an image is still in flight.
+COLOR_KEYS.forEach(key => loadImage(ASSETS.tileSprite(key)));
+Object.values(ASSETS.bonusSprites).forEach(path => loadImage(path));
+loadImage(ASSETS.fossilTileSprite);
+
+// Localize dino text (names, latinName, description, etc.) BEFORE anything
+// renders. Museum's constructor renders immediately, so if this ran later
+// (as it used to, further down this file) that very first paint would show
+// the raw, unlocalized config.js literal — e.g. the Latin name instead of
+// the Russian display name — for a frame until the language was applied.
+setDinoLanguage(getLang());
 
 const canvas = document.getElementById('gameCanvas');
 const museum = new Museum();
@@ -210,28 +224,30 @@ btnPauseGiveUp?.addEventListener('click', () => askPauseConfirm(() => game.pause
 
 onLangChange(() => refreshLanguage());
 
-setDinoLanguage(getLang());
 applyStaticTranslations();
 updateLangButtons();
 
+function mountIconSlot(slot) {
+    const key = slot.dataset.icon;
+    const path = key && ASSETS.uiIcons[key];
+    if (!path) return;
+    const probe = new Image();
+    probe.onload = () => {
+        const img = document.createElement('img');
+        img.src = path;
+        img.alt = '';
+        img.className = 'ui-icon-img';
+        slot.replaceChildren(img);
+    };
+    probe.src = path;
+}
+
 function mountAllIcons() {
-    document.querySelectorAll('[data-icon]').forEach(slot => {
-        const key = slot.dataset.icon;
-        const path = key && ASSETS.uiIcons[key];
-        if (!path) return;
-        const probe = new Image();
-        probe.onload = () => {
-            const img = document.createElement('img');
-            img.src = path;
-            img.alt = '';
-            img.className = 'ui-icon-img';
-            slot.replaceChildren(img);
-        };
-        probe.src = path;
-    });
+    document.querySelectorAll('[data-icon]').forEach(mountIconSlot);
 }
 
 mountAllIcons();
+window.__mountIconSlot = mountIconSlot;
 
 (function initCustomBackground() {
     const layer = document.getElementById('customBgLayer');
@@ -330,6 +346,8 @@ game.onInsufficientTool = (toolName, btn) => {
         onPause: () => game.pause(),
         onResume: () => game.resume()
     });
+
+    applyEnvLanguage();
 
     requestAnimationFrame(() => bridge.notifyGameReady());
 })();

@@ -3,12 +3,28 @@ import { BONUS_TYPE } from '../model/Tile.js';
 import { getReadyImage } from '../utils/AssetLoader.js';
 
 export class BoardRenderer {
-    constructor(ctx) {
+    constructor(ctx, dpr = 1) {
         this.ctx = ctx;
+        this.dpr = dpr;
+
+        // The dig-layer background (rounded rects, cracks, dirt specks,
+        // buried-fossil peeks) only changes when a tile gets dug or a new
+        // level loads — not every frame. Redrawing all 64 cells with their
+        // strokes/arcs/fills at 60fps was the single biggest cost in the
+        // render loop. We now paint it once into an offscreen canvas and
+        // just blit that bitmap every frame; _ensureBackground() below
+        // decides when a real redraw is actually needed.
+        this._bgCanvas = document.createElement('canvas');
+        this._bgCanvas.width = CONFIG.CANVAS_WIDTH * dpr;
+        this._bgCanvas.height = CONFIG.CANVAS_HEIGHT * dpr;
+        this._bgCtx = this._bgCanvas.getContext('2d');
+        this._bgCtx.scale(dpr, dpr);
+
+        this._bgDigLayerRef = null;
+        this._bgVersion = -1;
     }
 
-    _roundRect(x, y, w, h, r) {
-        const ctx = this.ctx;
+    _roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
         ctx.lineTo(x + w - r, y);
@@ -22,8 +38,17 @@ export class BoardRenderer {
         ctx.closePath();
     }
 
+    _ensureBackground(digLayer) {
+        const version = digLayer ? digLayer.version : -1;
+        if (digLayer === this._bgDigLayerRef && version === this._bgVersion) return;
+        this.drawBackground(digLayer);
+        this._bgDigLayerRef = digLayer;
+        this._bgVersion = version;
+    }
+
     drawBackground(digLayer) {
-        const ctx = this.ctx;
+        const ctx = this._bgCtx;
+        ctx.clearRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
         ctx.fillStyle = '#140d07';
         ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
 
@@ -36,7 +61,7 @@ export class BoardRenderer {
 
                 if (layer === 2) {
                     ctx.fillStyle = '#544131';
-                    this._roundRect(x, y, ts, ts, 8);
+                    this._roundRect(ctx, x, y, ts, ts, 8);
                     ctx.fill();
                     ctx.strokeStyle = '#7c624c';
                     ctx.lineWidth = 2;
@@ -51,7 +76,7 @@ export class BoardRenderer {
 
                 } else if (layer === 1) {
                     ctx.fillStyle = '#8b5a2b';
-                    this._roundRect(x, y, ts, ts, 8);
+                    this._roundRect(ctx, x, y, ts, ts, 8);
                     ctx.fill();
                     ctx.strokeStyle = '#b87d43';
                     ctx.lineWidth = 2;
@@ -67,14 +92,14 @@ export class BoardRenderer {
 
                 } else {
                     ctx.fillStyle = '#0f0904';
-                    this._roundRect(x, y, ts, ts, 8);
+                    this._roundRect(ctx, x, y, ts, ts, 8);
                     ctx.fill();
                     ctx.strokeStyle = '#2b190d';
                     ctx.lineWidth = 1.5;
                     ctx.stroke();
 
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-                    this._roundRect(x + 2, y + 2, ts - 4, ts - 4, 6);
+                    this._roundRect(ctx, x + 2, y + 2, ts - 4, ts - 4, 6);
                     ctx.fill();
                 }
 
@@ -105,7 +130,7 @@ export class BoardRenderer {
         const y = CONFIG.OFFSET_Y + selected.r * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) - 2;
         ctx.strokeStyle = '#ffd700';
         ctx.lineWidth = 3;
-        this._roundRect(x, y, CONFIG.TILE_SIZE + 4, CONFIG.TILE_SIZE + 4, 10);
+        this._roundRect(ctx, x, y, CONFIG.TILE_SIZE + 4, CONFIG.TILE_SIZE + 4, 10);
         ctx.stroke();
     }
 
@@ -137,12 +162,12 @@ export class BoardRenderer {
                 ctx.drawImage(sprite, tx + pad2, ty + pad2, drawSize - pad2 * 2, drawSize - pad2 * 2);
             } else {
                 ctx.fillStyle = '#d9c8b0';
-                this._roundRect(tx, ty, drawSize, drawSize, 10);
+                this._roundRect(ctx, tx, ty, drawSize, drawSize, 10);
                 ctx.fill();
 
                 ctx.strokeStyle = '#8c775a';
                 ctx.lineWidth = 2;
-                this._roundRect(tx, ty, drawSize, drawSize, 10);
+                this._roundRect(ctx, tx, ty, drawSize, drawSize, 10);
                 ctx.stroke();
 
                 ctx.fillStyle = '#ffffff';
@@ -154,16 +179,16 @@ export class BoardRenderer {
 
         } else if (tile.isCrate) {
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
-            this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
+            this._roundRect(ctx, tx + 2, ty + 3, drawSize, drawSize, 6);
             ctx.fill();
 
             ctx.fillStyle = '#7a4b21';
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
+            this._roundRect(ctx, tx, ty, drawSize, drawSize, 6);
             ctx.fill();
 
             ctx.strokeStyle = '#4a2d11';
             ctx.lineWidth = 2;
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
+            this._roundRect(ctx, tx, ty, drawSize, drawSize, 6);
             ctx.stroke();
 
             ctx.beginPath();
@@ -181,27 +206,27 @@ export class BoardRenderer {
 
         } else if (tile.bonus && tile.bonus !== BONUS_TYPE.NONE) {
 
-            ctx.fillStyle = 'rgba(0,0,0,0.35)';
-            this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
-            ctx.fill();
-
-            const grad = ctx.createLinearGradient(tx, ty, tx, ty + drawSize);
-            grad.addColorStop(0, '#3a3560');
-            grad.addColorStop(1, '#1c1a33');
-            ctx.fillStyle = grad;
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
-            ctx.fill();
-
-            ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 2;
-            this._roundRect(tx, ty, drawSize, drawSize, 6);
-            ctx.stroke();
-
             const sprite = getReadyImage(ASSETS.bonusSprites[tile.bonus]);
             if (sprite) {
-                const bp = drawSize * 0.2;
+                const bp = drawSize * 0.06;
                 ctx.drawImage(sprite, tx + bp, ty + bp, drawSize - bp * 2, drawSize - bp * 2);
             } else {
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                this._roundRect(ctx, tx + 2, ty + 3, drawSize, drawSize, 6);
+                ctx.fill();
+
+                const grad = ctx.createLinearGradient(tx, ty, tx, ty + drawSize);
+                grad.addColorStop(0, '#3a3560');
+                grad.addColorStop(1, '#1c1a33');
+                ctx.fillStyle = grad;
+                this._roundRect(ctx, tx, ty, drawSize, drawSize, 6);
+                ctx.fill();
+
+                ctx.strokeStyle = '#ffd700';
+                ctx.lineWidth = 2;
+                this._roundRect(ctx, tx, ty, drawSize, drawSize, 6);
+                ctx.stroke();
+
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 18px sans-serif';
                 ctx.textAlign = 'center';
@@ -225,17 +250,17 @@ export class BoardRenderer {
             if (sprite) {
 
                 ctx.save();
-                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                this._roundRect(ctx, tx, ty, drawSize, drawSize, 6);
                 ctx.clip();
                 ctx.drawImage(sprite, tx, ty, drawSize, drawSize);
                 ctx.restore();
             } else {
                 ctx.fillStyle = 'rgba(0,0,0,0.35)';
-                this._roundRect(tx + 2, ty + 3, drawSize, drawSize, 6);
+                this._roundRect(ctx, tx + 2, ty + 3, drawSize, drawSize, 6);
                 ctx.fill();
 
                 ctx.fillStyle = c.main;
-                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                this._roundRect(ctx, tx, ty, drawSize, drawSize, 6);
                 ctx.fill();
 
                 ctx.fillStyle = c.light;
@@ -245,7 +270,7 @@ export class BoardRenderer {
 
                 ctx.strokeStyle = c.dark;
                 ctx.lineWidth = 2;
-                this._roundRect(tx, ty, drawSize, drawSize, 6);
+                this._roundRect(ctx, tx, ty, drawSize, drawSize, 6);
                 ctx.stroke();
             }
         }
@@ -254,7 +279,8 @@ export class BoardRenderer {
     }
 
     draw(grid, selected, digLayer) {
-        this.drawBackground(digLayer);
+        this._ensureBackground(digLayer);
+        this.ctx.drawImage(this._bgCanvas, 0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
         this.drawSelection(selected);
 
         for (let r = 0; r < CONFIG.ROWS; r++) {

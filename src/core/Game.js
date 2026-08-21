@@ -25,19 +25,20 @@ export class Game {
     constructor(canvas, museum = null) {
         this.canvas = canvas;
 
-        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
         this.canvas.width = CONFIG.CANVAS_WIDTH * dpr;
         this.canvas.height = CONFIG.CANVAS_HEIGHT * dpr;
 
         this.ctx = canvas.getContext('2d');
         this.ctx.scale(dpr, dpr);
         this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = 'high';
+        this.ctx.imageSmoothingQuality = 'medium';
         this.museum = museum;
         this.levelMap = null;
+        this.gameScreenEl = document.getElementById('gameScreen');
         this.grid = new Grid();
         this.digLayer = new DigLayer();
-        this.renderer = new BoardRenderer(this.ctx);
+        this.renderer = new BoardRenderer(this.ctx, dpr);
 
         this.input = new InputManager(
             canvas,
@@ -87,6 +88,7 @@ export class Game {
             modalDesc: document.getElementById('modalDesc'),
             modalScore: document.getElementById('modalScore'),
             btnModalNext: document.getElementById('btnModalNext'),
+            modalNextIconSlot: document.getElementById('modalNextIconSlot'),
             btnModalMuseum: document.getElementById('btnModalMuseum'),
             btnModalHome: document.getElementById('btnModalHome'),
             btnModalWatchAd: document.getElementById('btnModalWatchAd'),
@@ -175,12 +177,16 @@ export class Game {
         this.loadLevel(type, tier);
     }
 
-    loadNextLevel() {
+    _advanceLevelProgress() {
         this.levelNumber++;
         if (this.levelNumber > this.highestLevelReached) {
             this.highestLevelReached = this.levelNumber;
         }
         this._saveProgress();
+    }
+
+    loadNextLevel() {
+        this._advanceLevelProgress();
         this.loadLevelByNumber(this.levelNumber);
     }
 
@@ -227,7 +233,9 @@ export class Game {
         if (this.ui.btnModalMuseum) {
             this.ui.btnModalMuseum.addEventListener('click', () => {
                 closeOverlay(this.ui.modalOverlay);
+                const wasVictory = this.state === STATE.VICTORY;
                 this.showAdThenRun(() => {
+                    if (wasVictory) this._advanceLevelProgress();
                     window.dispatchEvent(new CustomEvent('switchTab', { detail: 'museum' }));
                 });
             });
@@ -236,7 +244,9 @@ export class Game {
         if (this.ui.btnModalHome) {
             this.ui.btnModalHome.addEventListener('click', () => {
                 closeOverlay(this.ui.modalOverlay);
+                const wasVictory = this.state === STATE.VICTORY;
                 this.showAdThenRun(() => {
+                    if (wasVictory) this._advanceLevelProgress();
                     window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
                 });
             });
@@ -525,8 +535,10 @@ export class Game {
             }
 
             this.ui.modalDesc.innerHTML = desc;
-            if (this.ui.btnModalNext) {
-                this.ui.btnModalNext.textContent = '▶️';
+            if (this.ui.modalNextIconSlot) {
+                this.ui.modalNextIconSlot.dataset.icon = 'modalNext';
+                this.ui.modalNextIconSlot.textContent = '▶️';
+                if (window.__mountIconSlot) window.__mountIconSlot(this.ui.modalNextIconSlot);
             }
             if (this.ui.btnModalMuseum) {
                 this.ui.btnModalMuseum.style.display = 'inline-flex';
@@ -545,8 +557,10 @@ export class Game {
             if (this.ui.modalIconBadge) this.ui.modalIconBadge.textContent = '⛔';
             this.ui.modalTitle.textContent = t('modalLoseTitle');
             this.ui.modalDesc.textContent = t('modalLoseDesc');
-            if (this.ui.btnModalNext) {
-                this.ui.btnModalNext.textContent = '🔄';
+            if (this.ui.modalNextIconSlot) {
+                this.ui.modalNextIconSlot.dataset.icon = 'modalRetry';
+                this.ui.modalNextIconSlot.textContent = '🔄';
+                if (window.__mountIconSlot) window.__mountIconSlot(this.ui.modalNextIconSlot);
             }
             if (this.ui.btnModalMuseum) {
                 this.ui.btnModalMuseum.style.display = 'none';
@@ -642,7 +656,8 @@ export class Game {
     }
 
     loop() {
-        if (!this.paused) {
+        const isVisible = this.gameScreenEl && !this.gameScreenEl.classList.contains('hidden');
+        if (!this.paused && isVisible) {
             this.update();
             if (this.renderer && this.grid) {
                 this.renderer.draw(this.grid, this.input.selected, this.digLayer);
