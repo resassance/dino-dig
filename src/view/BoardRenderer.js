@@ -209,7 +209,17 @@ export class BoardRenderer {
             const sprite = getReadyImage(ASSETS.bonusSprites[tile.bonus]);
             if (sprite) {
                 const bp = drawSize * 0.06;
-                ctx.drawImage(sprite, tx + bp, ty + bp, drawSize - bp * 2, drawSize - bp * 2);
+                const box = drawSize - bp * 2;
+                // Fit the sprite inside the box while preserving its native
+                // aspect ratio (contain), instead of stretching it to fill
+                // a forced square — non-square sprites like the line
+                // breakers were getting squished/distorted otherwise.
+                const ratio = Math.min(box / sprite.width, box / sprite.height);
+                const dw = sprite.width * ratio;
+                const dh = sprite.height * ratio;
+                const dx = tx + bp + (box - dw) / 2;
+                const dy = ty + bp + (box - dh) / 2;
+                ctx.drawImage(sprite, dx, dy, dw, dh);
             } else {
                 ctx.fillStyle = 'rgba(0,0,0,0.35)';
                 this._roundRect(ctx, tx + 2, ty + 3, drawSize, drawSize, 6);

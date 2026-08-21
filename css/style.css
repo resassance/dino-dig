@@ -470,14 +470,14 @@ canvas {
 .modal-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(10, 6, 3, 0.85);
-    backdrop-filter: blur(4px);
+    background: rgba(10, 6, 3, 0.92);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
     opacity: 0;
+    will-change: opacity;
     transition: opacity 0.22s ease;
 }
 
@@ -1467,8 +1467,7 @@ img.bone-icon {
 .dino-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(10, 6, 3, 0.92);
-    backdrop-filter: blur(6px);
+    background: rgba(10, 6, 3, 0.96);
     display: flex;
     align-items: center;
     justify-content: center;
